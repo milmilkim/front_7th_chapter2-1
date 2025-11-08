@@ -1,5 +1,6 @@
 import HomePage from "./pages/HomePage";
 import DetailPage from "./pages/DetailPage";
+import NotFound from "./pages/NotFound";
 
 const routes = [
   {
@@ -52,7 +53,7 @@ export const renderPage = (routerId = "router-view") => {
   if (route) {
     routerRoot.innerHTML = route.component();
   } else {
-    routerRoot.innerHTML = "<h1>not found😂</h1>";
+    routerRoot.innerHTML = NotFound();
   }
 };
 
@@ -71,7 +72,7 @@ export const initRouter = () => {
 
   document.addEventListener("click", (e) => {
     const { target } = e;
-    if (target.dataset.routerLink) {
+    if (target.dataset.link) {
       router.push(target.dataset.routerLink);
     }
   });
