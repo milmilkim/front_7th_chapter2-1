@@ -15,7 +15,17 @@ const routes = [
 const BASE_PATH = import.meta.env.VITE_BASE_PATH || "/";
 
 const normalizePath = (pathname) => {
-  return pathname.startsWith(BASE_PATH) ? pathname.slice(BASE_PATH.length) || "/" : pathname;
+  if (!pathname.startsWith(BASE_PATH)) return pathname;
+
+  const pattern = new RegExp(`^${BASE_PATH}(?:/)?`);
+  let path = pathname.replace(pattern, "/");
+
+  // 중복된 슬래시 제거
+  path = path.replace(/\/{2,}/g, "/");
+  // 항상 /로 시작하도록 보정
+  if (!path.startsWith("/")) path = "/" + path;
+
+  return path === "" ? "/" : path;
 };
 
 export const Router = (() => {
