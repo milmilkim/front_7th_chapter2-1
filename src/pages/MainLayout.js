@@ -1,6 +1,12 @@
 import Header from "../components/Header";
 
 const MainLayout = () => {
+  console.log("MAIN LAYOUT");
+
+  window.addEventListener("cart:add", (e) => {
+    console.log("CART ADD", e);
+  });
+
   return /*html*/ `
       <div class="min-h-screen bg-gray-50">
         ${Header()}

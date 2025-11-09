@@ -53,7 +53,7 @@ const HomePage = ({ root }) => {
         if (!btn) return;
         const id = btn.getAttribute("data-product-id");
         if (!id) return;
-        window.dispatchEvent(new CustomEvent("cart:add", { detail: { productId: id } }));
+        window.dispatchEvent(new CustomEvent("cart:add", { detail: { productId: id, quantity: 1 } }));
       };
 
       const onSearch = (e) => {

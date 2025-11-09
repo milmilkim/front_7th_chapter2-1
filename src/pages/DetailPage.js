@@ -82,6 +82,7 @@ const DetailPage = ({ root, params }) => {
         const state = getState();
         const productId = btn.getAttribute("data-product-id");
         console.log("장바구니에 추가:", productId, "수량:", state.quantity);
+        window.dispatchEvent(new CustomEvent("cart:add", { detail: { productId, quantity: state.quantity } }));
       };
 
       const onRelatedProductClick = (e) => {
