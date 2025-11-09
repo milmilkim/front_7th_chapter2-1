@@ -55,9 +55,13 @@ export const renderPage = (routerId = "router-view") => {
   if (!routerRoot) return;
 
   if (route) {
-    routerRoot.innerHTML = route.component();
+    route.component({
+      root: routerRoot,
+    });
   } else {
-    routerRoot.innerHTML = NotFound();
+    NotFound({
+      root: routerRoot,
+    });
   }
 };
 

@@ -1,4 +1,5 @@
-export const 상품목록_레이아웃_로딩 = /*html*/ `
+const MainLayout = () => {
+  return /*html*/ `
       <div class="min-h-screen bg-gray-50">
         <header class="bg-white shadow-sm sticky top-0 z-40">
           <div class="max-w-md mx-auto px-4 py-4">
@@ -19,7 +20,8 @@ export const 상품목록_레이아웃_로딩 = /*html*/ `
           </div>
         </header>
         <main class="max-w-md mx-auto px-4 py-4">
-        <div id="router-view"></div>
+        <div id="router-view">
+        </div>
         </main>
         <footer class="bg-white shadow-sm sticky top-0 z-40">
           <div class="max-w-md mx-auto py-8 text-center text-gray-500">
@@ -28,11 +30,6 @@ export const 상품목록_레이아웃_로딩 = /*html*/ `
         </footer>
       </div>
     `;
-
-const MainLayout = () => {
-  return /*html*/ `
-  ${상품목록_레이아웃_로딩}
-        `;
 };
 
 export default MainLayout;
