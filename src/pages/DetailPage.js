@@ -81,8 +81,19 @@ const DetailPage = ({ root, params }) => {
         if (!btn) return;
         const state = getState();
         const productId = btn.getAttribute("data-product-id");
-        console.log("장바구니에 추가:", productId, "수량:", state.quantity);
-        window.dispatchEvent(new CustomEvent("cart:add", { detail: { productId, quantity: state.quantity } }));
+
+        console.log("productId", productId);
+
+        // 상품 정보가 이미 state에 있음
+        if (state.product) {
+          window.dispatchEvent(
+            new CustomEvent("cart:add", {
+              detail: { id: productId, quantity: state.quantity, product: state.product },
+            }),
+          );
+        } else {
+          console.error("상품 정보가 없습니다");
+        }
       };
 
       const onRelatedProductClick = (e) => {
@@ -120,7 +131,6 @@ const DetailPage = ({ root, params }) => {
     (async () => {
       try {
         const product = await getProduct(productId);
-        console.log("product", product);
 
         let relatedProducts = [];
         if (product?.category2) {

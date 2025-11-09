@@ -14,7 +14,6 @@ export const createPage = (root, setup) => {
     view = fn;
   };
   const afterRender = (fn) => {
-    console.log("afterRender");
     binders.push(fn);
   };
 
@@ -37,8 +36,9 @@ export const createPage = (root, setup) => {
   render();
 
   return {
+    getState,
+    setState,
     unmount() {
-      console.log("unmount");
       cleanups.forEach((fn) => fn && fn());
       cleanups = [];
       root.replaceChildren();

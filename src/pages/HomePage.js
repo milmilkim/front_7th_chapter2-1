@@ -38,7 +38,7 @@ const HomePage = ({ root }) => {
       `;
     });
 
-    afterRender(({ root }) => {
+    afterRender(({ root, getState }) => {
       const onCardClick = (e) => {
         const btn = e.target.closest(".add-to-cart-btn");
         if (btn) return;
@@ -53,7 +53,20 @@ const HomePage = ({ root }) => {
         if (!btn) return;
         const id = btn.getAttribute("data-product-id");
         if (!id) return;
-        window.dispatchEvent(new CustomEvent("cart:add", { detail: { productId: id, quantity: 1 } }));
+
+        // 상품 목록에서 해당 상품 찾기
+        const state = getState();
+        const product = state.products?.find((p) => p.productId === id);
+
+        if (product) {
+          window.dispatchEvent(
+            new CustomEvent("cart:add", {
+              detail: { id: id, quantity: 1, product },
+            }),
+          );
+        } else {
+          console.error("상품을 찾을 수 없습니다:", id);
+        }
       };
 
       const onSearch = (e) => {

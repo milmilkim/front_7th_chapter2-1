@@ -1,7 +1,6 @@
 import HomePage from "./pages/HomePage";
 import DetailPage from "./pages/DetailPage";
 import NotFound from "./pages/NotFound";
-import { updateHeader } from "./components/Header";
 
 const routes = [
   {
@@ -126,9 +125,6 @@ export const renderPage = (routerId = "router-view") => {
     }
   }
 
-  // 헤더 업데이트
-  updateHeader(path);
-
   if (matchedRoute) {
     // 쿼리스트링 파라미터도 추가
     const searchParams = new URLSearchParams(window.location.search);
@@ -150,6 +146,9 @@ export const renderPage = (routerId = "router-view") => {
       root: routerRoot,
     });
   }
+
+  // 라우트 변경 완료 이벤트 발생 (Header 업데이트용)
+  window.dispatchEvent(new CustomEvent("route:changed", { detail: { path } }));
 };
 
 let initialized = false;
