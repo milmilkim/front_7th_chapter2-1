@@ -1,6 +1,7 @@
 import HomePage from "./pages/HomePage";
 import DetailPage from "./pages/DetailPage";
 import NotFound from "./pages/NotFound";
+import { updateHeader } from "./components/Header";
 
 const routes = [
   {
@@ -98,11 +99,19 @@ export const Router = (() => {
   });
 })();
 
+let currentPageInstance = null;
+
 export const renderPage = (routerId = "router-view") => {
   const path = normalizePath(window.location.pathname);
   const routerRoot = document.getElementById(routerId);
 
   if (!routerRoot) return;
+
+  // 이전 페이지 언마운트
+  if (currentPageInstance && currentPageInstance.unmount) {
+    currentPageInstance.unmount();
+    currentPageInstance = null;
+  }
 
   // 라우트 매칭 (정확한 매칭 우선, 그 다음 파라미터 매칭)
   let matchedRoute = null;
@@ -117,16 +126,25 @@ export const renderPage = (routerId = "router-view") => {
     }
   }
 
+  // 헤더 업데이트
+  updateHeader(path);
+
   if (matchedRoute) {
     // 쿼리스트링 파라미터도 추가
     const searchParams = new URLSearchParams(window.location.search);
     const queryParams = Object.fromEntries(searchParams);
     const allParams = { ...routeParams, ...queryParams };
 
-    matchedRoute.component({
+    // 페이지 컴포넌트 실행 및 인스턴스 저장
+    const pageInstance = matchedRoute.component({
       root: routerRoot,
       params: allParams,
     });
+
+    // 페이지 인스턴스가 unmount 메서드를 가지고 있으면 저장
+    if (pageInstance && pageInstance.unmount) {
+      currentPageInstance = pageInstance;
+    }
   } else {
     NotFound({
       root: routerRoot,
@@ -151,7 +169,7 @@ export const initRouter = () => {
     renderPage();
   });
 
-  // 이벤트 위임: data-link 속성을 가진 링크 처리
+  // data-link
   document.addEventListener("click", (e) => {
     const linkEl = e.target.closest("[data-link]");
     if (!linkEl) return;
@@ -159,6 +177,15 @@ export const initRouter = () => {
     e.preventDefault();
     const path = linkEl.getAttribute("data-link")?.trim() || "/";
     router.push(path);
+  });
+
+  // 뒤로가기 버튼
+  document.addEventListener("click", (e) => {
+    const backButton = e.target.closest("#back-button");
+    if (backButton) {
+      e.preventDefault();
+      window.history.back();
+    }
   });
 
   // 초기 렌더링 시 currentPath 업데이트
