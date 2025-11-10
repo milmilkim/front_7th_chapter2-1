@@ -121,15 +121,12 @@ const DetailPage = createComponent(({ root, getState, setState, template, onMoun
 
       let relatedProducts = [];
       if (product?.category2) {
-        try {
-          const relatedData = await getProducts({
-            category2: product.category2,
-            limit: 2,
-          });
-          relatedProducts = relatedData?.products || [];
-        } catch (err) {
-          console.error("관련 상품 로드 실패:", err);
-        }
+        const relatedData = await getProducts({
+          category1: product.category1,
+          category2: product.category2,
+          limit: 20,
+        });
+        relatedProducts = (relatedData?.products || []).filter((p) => p.productId !== productId);
       }
 
       setState({

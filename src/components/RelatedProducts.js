@@ -18,7 +18,6 @@ const RelatedProducts = ({ products, currentProductId }) => {
       <div class="p-4">
         <div class="grid grid-cols-2 gap-3 responsive-grid">
           ${filteredProducts
-            .slice(0, 4)
             .map(
               (product) => /*html*/ `
             <div class="bg-gray-50 rounded-lg p-3 related-product-card cursor-pointer" data-product-id="${product.productId}">
