@@ -1,4 +1,4 @@
-import { createComponent } from "../core/BasePage";
+import { createComponent } from "../core/BaseComponent";
 import { eventBus, Events } from "../core/EventBus";
 import { cartStore } from "../stores/cartStore";
 

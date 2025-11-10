@@ -1,4 +1,4 @@
-import { createComponent } from "../core/BasePage";
+import { createComponent } from "../core/BaseComponent";
 import { Router } from "../router";
 import ProductInfo from "../components/ProductInfo";
 import RelatedProducts from "../components/RelatedProducts";

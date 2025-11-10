@@ -3,7 +3,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import ProductCard from "../components/ProductCard";
 import { Router } from "../router";
-import { createComponent } from "../core/BasePage";
+import { createComponent } from "../core/BaseComponent";
 import { getProducts } from "../api/productApi";
 import { cartStore } from "../stores/cartStore";
 import { showToast } from "../components/Toast";

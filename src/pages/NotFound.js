@@ -1,4 +1,4 @@
-import { createComponent } from "../core/BasePage";
+import { createComponent } from "../core/BaseComponent";
 
 const NotFound = ({ root }) => {
   return createComponent(root, ({ template }) => {
