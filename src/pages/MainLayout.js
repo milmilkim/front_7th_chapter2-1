@@ -1,6 +1,6 @@
 import Header from "../components/Header";
 import Toast, { showToast } from "../components/Toast";
-import { addToCart } from "../utils/cart";
+import { cartStore } from "../stores/cartStore";
 
 const MainLayout = () => {
   return /*html*/ `
@@ -41,7 +41,7 @@ export const initMainLayout = () => {
       return;
     }
 
-    const success = addToCart(id, quantity, product);
+    const success = cartStore.addItem(id, quantity, product);
 
     if (success) {
       showToast("장바구니에 추가되었습니다", "success");

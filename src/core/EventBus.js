@@ -70,9 +70,8 @@ export const eventBus = new EventBus();
  * 이벤트 이름 상수 (오타 방지 + 자동완성)
  */
 export const Events = {
-  // 장바구니 관련
+  // 장바구니 관련 (window 커스텀 이벤트)
   CART_ADD: "cart:add",
-  CART_UPDATED: "cart:updated",
 
   // 라우팅 관련
   ROUTE_CHANGED: "route:changed",
