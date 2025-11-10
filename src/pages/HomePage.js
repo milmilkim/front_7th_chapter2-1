@@ -3,13 +3,13 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import ProductCard from "../components/ProductCard";
 import { Router } from "../router";
-import { createPage } from "../core/BasePage";
+import { createComponent } from "../core/BasePage";
 import { getProducts } from "../api/productApi";
 
 const HomePage = ({ root }) => {
   const router = Router();
 
-  return createPage(root, ({ setState, template, afterRender }) => {
+  return createComponent(root, ({ setState, template, onMount }) => {
     setState({
       isLoading: true,
       searchValue: "",
@@ -38,7 +38,7 @@ const HomePage = ({ root }) => {
       `;
     });
 
-    afterRender(({ root, getState }) => {
+    onMount(({ root, getState, on }) => {
       const onCardClick = (e) => {
         const btn = e.target.closest(".add-to-cart-btn");
         if (btn) return;
@@ -75,15 +75,9 @@ const HomePage = ({ root }) => {
         setState({ searchValue: input.value });
       };
 
-      root.addEventListener("click", onCardClick);
-      root.addEventListener("click", onAddToCart);
-      root.addEventListener("input", onSearch);
-
-      return () => {
-        root.removeEventListener("click", onCardClick);
-        root.removeEventListener("click", onAddToCart);
-        root.removeEventListener("input", onSearch);
-      };
+      on(root, "click", onCardClick);
+      on(root, "click", onAddToCart);
+      on(root, "input", onSearch);
     });
 
     (async () => {

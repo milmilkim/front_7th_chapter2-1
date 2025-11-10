@@ -1,4 +1,4 @@
-export const createPage = (root, setup) => {
+export const createComponent = (root, setup) => {
   let state = {};
   let view = () => "";
   const binders = [];
@@ -13,7 +13,7 @@ export const createPage = (root, setup) => {
   const template = (fn) => {
     view = fn;
   };
-  const afterRender = (fn) => {
+  const onMount = (fn) => {
     binders.push(fn);
   };
 
@@ -27,12 +27,18 @@ export const createPage = (root, setup) => {
 
     // 새 바인딩
     binders.forEach((fn) => {
-      const c = fn({ root, getState, setState });
+      // 이벤트 리스너 자동 관리 헬퍼
+      const on = (target, event, handler) => {
+        target.addEventListener(event, handler);
+        cleanups.push(() => target.removeEventListener(event, handler));
+      };
+
+      const c = fn({ root, getState, setState, on });
       if (typeof c === "function") cleanups.push(c);
     });
   };
 
-  setup({ getState, setState, template, afterRender });
+  setup({ getState, setState, template, onMount });
   render();
 
   return {

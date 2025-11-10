@@ -1,4 +1,4 @@
-import { createPage } from "../core/BasePage";
+import { createComponent } from "../core/BasePage";
 import { getCartItemCount } from "../utils/cart";
 
 const getTitleByPath = (path) => {
@@ -44,7 +44,7 @@ const shouldShowBackButton = (path) => {
 };
 
 const Header = ({ root }) => {
-  return createPage(root, ({ setState, template, afterRender }) => {
+  return createComponent(root, ({ setState, template, onMount }) => {
     setState({
       currentPath: window.location.pathname,
       cartCount: getCartItemCount(),
@@ -90,26 +90,17 @@ const Header = ({ root }) => {
       `;
     });
 
-    afterRender(() => {
-      const handleCartUpdate = () => {
-        const newCount = getCartItemCount();
-        setState({ cartCount: newCount });
-      };
+    onMount(({ on }) => {
+      on(window, "cart:updated", () => {
+        setState({ cartCount: getCartItemCount() });
+      });
 
-      const handleRouteChange = (e) => {
+      on(window, "route:changed", (e) => {
         const { path } = e.detail || {};
         if (path) {
           setState({ currentPath: path });
         }
-      };
-
-      window.addEventListener("cart:updated", handleCartUpdate);
-      window.addEventListener("route:changed", handleRouteChange);
-
-      return () => {
-        window.removeEventListener("cart:updated", handleCartUpdate);
-        window.removeEventListener("route:changed", handleRouteChange);
-      };
+      });
     });
   });
 };

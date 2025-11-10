@@ -1,9 +1,9 @@
-import { createPage } from "../core/BasePage";
+import { createComponent } from "../core/BasePage";
 
 const NotFound = ({ root }) => {
-  return createPage(root, ({ template }) => {
+  return createComponent(root, ({ template }) => {
     template(() => {
-      return `
+      return /*html*/ `
         <div class="text-center my-4 py-20 shadow-md p-6 bg-white rounded-lg">
           <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
             <defs>

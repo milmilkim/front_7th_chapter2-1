@@ -1,4 +1,4 @@
-import { createPage } from "../core/BasePage";
+import { createComponent } from "../core/BasePage";
 import { Router } from "../router";
 import ProductInfo from "../components/ProductInfo";
 import RelatedProducts from "../components/RelatedProducts";
@@ -19,7 +19,7 @@ const DetailPage = ({ root, params }) => {
   const productId = params?.productId;
   const router = Router();
 
-  return createPage(root, ({ setState, template, afterRender, getState }) => {
+  return createComponent(root, ({ setState, template, onMount, getState }) => {
     setState({
       isLoading: true,
       product: {},
@@ -36,7 +36,7 @@ const DetailPage = ({ root, params }) => {
       `;
     });
 
-    afterRender(({ root }) => {
+    onMount(({ root, on }) => {
       const onQuantityIncrease = (e) => {
         const btn = e.target.closest("#quantity-increase");
         if (!btn) return;
@@ -109,23 +109,13 @@ const DetailPage = ({ root, params }) => {
         router.push("/");
       };
 
-      root.addEventListener("click", onQuantityIncrease);
-      root.addEventListener("click", onQuantityDecrease);
-      root.addEventListener("input", onQuantityInput);
-      root.addEventListener("change", onQuantityChange);
-      root.addEventListener("click", onAddToCart);
-      root.addEventListener("click", onRelatedProductClick);
-      root.addEventListener("click", onGoToList);
-
-      return () => {
-        root.removeEventListener("click", onQuantityIncrease);
-        root.removeEventListener("click", onQuantityDecrease);
-        root.removeEventListener("input", onQuantityInput);
-        root.removeEventListener("change", onQuantityChange);
-        root.removeEventListener("click", onAddToCart);
-        root.removeEventListener("click", onRelatedProductClick);
-        root.removeEventListener("click", onGoToList);
-      };
+      on(root, "click", onQuantityIncrease);
+      on(root, "click", onQuantityDecrease);
+      on(root, "input", onQuantityInput);
+      on(root, "change", onQuantityChange);
+      on(root, "click", onAddToCart);
+      on(root, "click", onRelatedProductClick);
+      on(root, "click", onGoToList);
     });
 
     (async () => {
