@@ -8,6 +8,7 @@ import { useAsync } from "../core/useAsync";
 import { getProducts } from "../api/productApi";
 import { cartStore } from "../stores/cartStore";
 import { showToast } from "../components/Toast";
+import ErrorView from "../components/ErrorView";
 
 const HomePage = createComponent(({ root, getState, setState, template, onMount, on }) => {
   const router = Router();
@@ -25,10 +26,7 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
     if (error) {
       return `
         ${SearchFilter({ isLoading: false, searchValue })}
-        <div class="py-20 text-center">
-          <p class="text-red-600">상품 목록을 불러오는데 실패했습니다.</p>
-          <p class="text-gray-600 text-sm mt-2">${error.message}</p>
-        </div>
+        ${ErrorView({ message: error.message })}
       `;
     }
 
@@ -59,7 +57,6 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
     const fetchProducts = useAsync(setState, getProducts, {
       onError: (error) => {
         console.error("상품 목록 로드 실패:", error);
-        showToast("상품 목록을 불러오는데 실패했습니다", "error");
       },
     });
 
@@ -100,8 +97,15 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
       setState({ searchValue: input.value });
     };
 
+    const onRetry = (e) => {
+      const btn = e.target.closest("#retry-btn");
+      if (!btn) return;
+      fetchProducts();
+    };
+
     on(root, "click", onCardClick);
     on(root, "click", onAddToCart);
+    on(root, "click", onRetry);
     on(root, "input", onSearch);
   });
 });
