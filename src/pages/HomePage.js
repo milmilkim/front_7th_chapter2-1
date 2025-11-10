@@ -1,24 +1,27 @@
 import SearchFilter from "../components/SearchFilter";
 import ProductList from "../components/ProductList";
-import { Router } from "../router";
+import { Router, useQueryParams } from "../router";
 import { createComponent } from "../core/BaseComponent";
 import { getProducts, getCategories } from "../api/productApi";
 import { cartStore } from "../stores/cartStore";
 import ErrorView from "../components/ErrorView";
 import { showToast } from "../components/Toast";
+import { eventBus, Events } from "../core/EventBus";
 
 const HomePage = createComponent(({ root, getState, setState, template, onMount, onUpdated, on }) => {
   const router = Router();
+  const queryParams = useQueryParams();
 
   setState({
     data: null,
-    searchValue: "",
+    searchValue: queryParams.search || "",
     filter: {
-      page: 1,
-      limit: 20,
-      sort: "price_asc",
-      category1: "",
-      category2: "",
+      page: parseInt(queryParams.current) || 1,
+      limit: parseInt(queryParams.limit) || 20,
+      sort: queryParams.sort || "price_asc",
+      category1: queryParams.category1 || "",
+      category2: queryParams.category2 || "",
+      search: queryParams.search || "",
     },
     categories: [],
     isCategoryLoading: false,
@@ -96,9 +99,55 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
 
   // 무한 스크롤 옵저버 (컴포넌트 레벨에서 한 번만 생성)
   let observer = null;
+  let previousQueryParams = null;
 
   // 최초 1번만 - DOM 이벤트 위임
   onMount(() => {
+    // 쿼리 변경 이벤트 구독
+    const unsubscribeQueryChange = eventBus.on(Events.QUERY_CHANGED, (queryParams) => {
+      const { filter } = getState();
+      const currentPage = parseInt(queryParams.current) || 1;
+
+      // current만 변경된 경우 (무한 스크롤)는 페칭하지 않음
+      if (previousQueryParams) {
+        const isOnlyCurrentChanged =
+          queryParams.current !== previousQueryParams.current &&
+          queryParams.search === previousQueryParams.search &&
+          queryParams.limit === previousQueryParams.limit &&
+          queryParams.sort === previousQueryParams.sort &&
+          queryParams.category1 === previousQueryParams.category1 &&
+          queryParams.category2 === previousQueryParams.category2;
+
+        if (isOnlyCurrentChanged) {
+          // current만 업데이트하고 페칭은 하지 않음
+          setState({
+            filter: {
+              ...filter,
+              page: currentPage,
+            },
+          });
+          previousQueryParams = { ...queryParams };
+          return;
+        }
+      }
+
+      setState({
+        searchValue: queryParams.search || "",
+        filter: {
+          ...filter,
+          page: currentPage,
+          limit: parseInt(queryParams.limit) || 20,
+          sort: queryParams.sort || "price_asc",
+          category1: queryParams.category1 || "",
+          category2: queryParams.category2 || "",
+          search: queryParams.search || "",
+        },
+        data: null, // 쿼리 변경 시 데이터 초기화
+      });
+      previousQueryParams = { ...queryParams };
+      fetchProducts();
+    });
+
     // 무한 스크롤 옵저버 생성
     observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
@@ -113,7 +162,14 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
 
           // 다음 페이지 로드
           const { filter } = getState();
-          setState({ filter: { ...filter, page: filter.page + 1 } });
+          const nextPage = filter.page + 1;
+          setState({ filter: { ...filter, page: nextPage } });
+
+          // 쿼리스트링 업데이트 (페칭은 하지 않음)
+          const queryParams = new URLSearchParams(window.location.search);
+          queryParams.set("current", nextPage.toString());
+          window.history.replaceState({}, "", `/?${queryParams.toString()}`);
+
           fetchProducts();
         }
       });
@@ -154,11 +210,14 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
       if (e.key !== "Enter") return;
 
       const searchValue = input.value.trim();
-      setState({
-        searchValue,
-        filter: { ...getState().filter, search: searchValue, page: 1 },
-      });
-      fetchProducts();
+      const queryParams = new URLSearchParams(window.location.search);
+      if (searchValue) {
+        queryParams.set("search", searchValue);
+      } else {
+        queryParams.delete("search");
+      }
+      queryParams.set("current", "1");
+      router.push(`/?${queryParams.toString()}`);
     };
 
     const onRetry = (e) => {
@@ -170,7 +229,15 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
     const onLoadMore = (e) => {
       const btn = e.target.closest("#load-more-btn");
       if (!btn) return;
-      setState({ filter: { ...getState().filter, page: getState().filter.page + 1 } });
+      const { filter } = getState();
+      const nextPage = filter.page + 1;
+      setState({ filter: { ...filter, page: nextPage } });
+
+      // 쿼리스트링 업데이트 (페칭은 하지 않음)
+      const queryParams = new URLSearchParams(window.location.search);
+      queryParams.set("current", nextPage.toString());
+      window.history.replaceState({}, "", `/?${queryParams.toString()}`);
+
       fetchProducts();
     };
 
@@ -178,12 +245,7 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
     const onCategoryClick = (e) => {
       const resetBtn = e.target.closest("[data-breadcrumb='reset']");
       if (resetBtn) {
-        const currentFilter = getState().filter;
-        setState({
-          filter: { ...currentFilter, category1: "", category2: "", page: 1 },
-          data: null,
-        });
-        fetchProducts();
+        router.push(`/`);
         return;
       }
 
@@ -192,14 +254,11 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
       const category1Breadcrumb = e.target.closest("[data-breadcrumb='category1']");
       if (category1Btn || category1Breadcrumb) {
         const category1 = (category1Btn || category1Breadcrumb).getAttribute("data-category1");
-        const currentFilter = getState().filter;
-
-        // 카테고리1 선택 (카테고리2 항상 초기화)
-        setState({
-          filter: { ...currentFilter, category1, category2: "", page: 1 },
-          data: null,
-        });
-        fetchProducts();
+        const queryParams = new URLSearchParams(window.location.search);
+        queryParams.set("category1", category1);
+        queryParams.delete("category2"); // category1 선택 시 category2 초기화
+        queryParams.set("current", "1");
+        router.push(`/?${queryParams.toString()}`);
         return;
       }
 
@@ -207,13 +266,10 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
       const category2Btn = e.target.closest(".category2-filter-btn");
       if (category2Btn) {
         const category2 = category2Btn.getAttribute("data-category2");
-        const currentFilter = getState().filter;
-
-        setState({
-          filter: { ...currentFilter, category2, page: 1 },
-          data: null,
-        });
-        fetchProducts();
+        const queryParams = new URLSearchParams(window.location.search);
+        queryParams.set("category2", category2);
+        queryParams.set("current", "1");
+        router.push(`/?${queryParams.toString()}`);
         return;
       }
     };
@@ -227,15 +283,19 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
     on(root, "change", (e) => {
       const limitSelect = e.target.closest("#limit-select");
       if (limitSelect) {
-        setState({ filter: { ...getState().filter, limit: parseInt(limitSelect.value), page: 1 } });
-        fetchProducts();
+        const queryParams = new URLSearchParams(window.location.search);
+        queryParams.set("limit", limitSelect.value);
+        queryParams.set("current", "1");
+        router.push(`/?${queryParams.toString()}`);
         return;
       }
 
       const sortSelect = e.target.closest("#sort-select");
       if (sortSelect) {
-        setState({ filter: { ...getState().filter, sort: sortSelect.value, page: 1 } });
-        fetchProducts();
+        const queryParams = new URLSearchParams(window.location.search);
+        queryParams.set("sort", sortSelect.value);
+        queryParams.set("current", "1");
+        router.push(`/?${queryParams.toString()}`);
         return;
       }
     });
@@ -243,6 +303,11 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
     // 최초 데이터 로드
     fetchProducts();
     fetchCategories();
+
+    // cleanup 함수 반환
+    return () => {
+      unsubscribeQueryChange();
+    };
   });
 
   // 매 렌더링마다 - sentinel 다시 관찰

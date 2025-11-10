@@ -80,9 +80,7 @@ export const Router = (() => {
       // 경로와 쿼리스트링 분리
       const [pathname, queryString] = path.split("?");
       const normalizedCurrent = normalizePath(window.location.pathname);
-
       const normalizedNew = normalizePath(pathname.split("?")[0]);
-      // const normalizedNewQuery = queryString ? `?${queryString}` : "";
       const newSearch = queryString ? `?${queryString}` : "";
 
       // pathname과 쿼리스트링이 모두 같으면 중복 이동 방지
@@ -95,11 +93,13 @@ export const Router = (() => {
       const fullPath = queryString
         ? `${BASE_PATH}${pathname.replace(/^\//, "")}?${queryString}`
         : `${BASE_PATH}${pathname.replace(/^\//, "")}`;
+
+      // 항상 pushState 사용 (히스토리 쌓기)
       window.history.pushState({}, "", fullPath);
-      renderPage();
+      // renderPage()는 urlchange 이벤트에서 자동으로 호출됨 (renderPage에서 분기 처리)
     },
-    updateCurrentPath: (path) => {
-      currentPath = path;
+    syncLocation: () => {
+      currentPath = normalizePath(window.location.pathname);
       currentSearch = window.location.search;
     },
   });
@@ -110,13 +110,47 @@ export const useParams = () => {
   return currentParams;
 };
 
+export const useQueryParams = () => {
+  const params = new URLSearchParams(window.location.search);
+  const paramsObj = Object.fromEntries(params);
+  return paramsObj;
+};
+
 let currentPageInstance = null;
+let previousPath = null;
 
 export const renderPage = (routerId = "router-view") => {
   const path = normalizePath(window.location.pathname);
   const routerRoot = document.getElementById(routerId);
 
   if (!routerRoot) return;
+
+  // path가 같고 쿼리만 다르면 전체 렌더링 건너뛰고 쿼리 파라미터만 업데이트
+  if (previousPath === path && currentPageInstance) {
+    const searchParams = new URLSearchParams(window.location.search);
+    const queryParams = Object.fromEntries(searchParams);
+
+    // 라우트 매칭하여 routeParams 가져오기
+    let routeParams = {};
+    for (const route of routes) {
+      const { match, params } = matchRoute(path, route.path);
+      if (match) {
+        routeParams = params;
+        break;
+      }
+    }
+
+    const allParams = { ...routeParams, ...queryParams };
+    currentParams = allParams;
+
+    // 쿼리 파라미터 변경 이벤트 발생 (이벤트버스로 전달)
+    eventBus.emit(Events.QUERY_CHANGED, queryParams);
+
+    // 라우트 변경 완료 이벤트 발생 (Header 업데이트용)
+    eventBus.emit(Events.ROUTE_CHANGED, path);
+    previousPath = path;
+    return;
+  }
 
   // 이전 페이지 언마운트
   if (currentPageInstance && currentPageInstance.unmount) {
@@ -158,13 +192,20 @@ export const renderPage = (routerId = "router-view") => {
     }
   } else {
     currentParams = {};
-    NotFound({
+    const notFoundInstance = NotFound({
       root: routerRoot,
+      options: { name: "notfound" },
     });
+
+    // NotFound 인스턴스가 unmount 메서드를 가지고 있으면 저장
+    if (notFoundInstance && notFoundInstance.unmount) {
+      currentPageInstance = notFoundInstance;
+    }
   }
 
   // 라우트 변경 완료 이벤트 발생 (Header 업데이트용)
   eventBus.emit(Events.ROUTE_CHANGED, path);
+  previousPath = path;
 };
 
 let initialized = false;
@@ -175,12 +216,27 @@ export const initRouter = () => {
 
   const router = Router();
 
+  // pushState와 replaceState 래핑하여 쿼리스트링 변경 감지
+  ["pushState", "replaceState"].forEach((method) => {
+    const original = history[method];
+    history[method] = function (...args) {
+      const result = original.apply(this, args);
+      window.dispatchEvent(new Event("urlchange"));
+      return result;
+    };
+  });
+
   renderPage();
 
   // 뒤로가기
   window.addEventListener("popstate", () => {
-    const path = normalizePath(window.location.pathname);
-    router.updateCurrentPath(path);
+    router.syncLocation();
+    renderPage();
+  });
+
+  // pushState/replaceState로 인한 URL 변경 감지
+  window.addEventListener("urlchange", () => {
+    router.syncLocation();
     renderPage();
   });
 
@@ -203,6 +259,6 @@ export const initRouter = () => {
     }
   });
 
-  // 초기 렌더링 시 currentPath 업데이트
-  router.updateCurrentPath(normalizePath(window.location.pathname));
+  // 초기 렌더링 시 location 동기화
+  router.syncLocation();
 };
