@@ -1,5 +1,3 @@
-const CATEGORIES = ["생활/건강", "디지털/가전"];
-
 const LIMIT_OPTIONS = [
   { value: 10, label: "10개" },
   { value: 20, label: "20개" },
@@ -14,11 +12,47 @@ const SORT_OPTIONS = [
   { value: "name_desc", label: "이름 역순" },
 ];
 
-const createCategoryButton = (category) => /*html*/ `
+const getCategoryTree = (categories) => {
+  if (!categories || typeof categories !== "object") {
+    return [];
+  }
+
+  // 배열로 온 경우
+  if (Array.isArray(categories)) {
+    return categories.map((category) => {
+      return {
+        name: category.name,
+        children: category.children.map((child) => {
+          return { name: child.name };
+        }),
+      };
+    });
+  }
+
+  // 객체로 온 경우
+  return Object.entries(categories).map(([category1Name, category2Obj]) => {
+    return {
+      name: category1Name,
+      children: Object.keys(category2Obj).map((category2Name) => {
+        return { name: category2Name };
+      }),
+    };
+  });
+};
+
+const createCategory1Button = (categoryName) => /*html*/ `
   <button 
-    data-category1="${category}" 
+    data-category1="${categoryName}" 
     class="category1-filter-btn text-left px-3 py-2 text-sm rounded-md border transition-colors bg-white border-gray-300 text-gray-700 hover:bg-gray-50">
-    ${category}
+    ${categoryName}
+  </button>
+`;
+
+const createCategory2Button = (categoryName, isSelected = false) => /*html*/ `
+  <button 
+    data-category2="${categoryName}" 
+    class="category2-filter-btn text-left px-3 py-2 text-sm rounded-md border transition-colors ${isSelected ? "bg-blue-100 border-blue-300 text-blue-800" : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"}">
+    ${categoryName}
   </button>
 `;
 
@@ -28,7 +62,17 @@ const createOption = (option, selectedValue) => /*html*/ `
   </option>
 `;
 
-const SearchFilter = ({ isLoading = false, searchValue = "", limit = 10, sort = "price_asc" }) => {
+const SearchFilter = ({
+  isCategoryLoading,
+  category1 = "",
+  category2 = "",
+  searchValue = "",
+  categories = [],
+  limit = 10,
+  sort = "price_asc",
+}) => {
+  const categoryTree = getCategoryTree(categories);
+  const selectedCategory1 = categoryTree.find((cat) => cat.name === category1);
   return /*html*/ `
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
             <!-- 검색창 -->
@@ -51,17 +95,36 @@ const SearchFilter = ({ isLoading = false, searchValue = "", limit = 10, sort = 
                 <div class="flex items-center gap-2">
                   <label class="text-sm text-gray-600">카테고리:</label>
                   <button data-breadcrumb="reset" class="text-xs hover:text-blue-800 hover:underline">전체</button>
+                  ${
+                    category1
+                      ? `<span class="text-xs text-gray-500">&gt;</span>
+                        <button data-breadcrumb="category1" data-category1="${category1}" class="text-xs hover:text-blue-800 hover:underline">${category1}</button>`
+                      : ""
+                  }
+                  ${
+                    category2
+                      ? `<span class="text-xs text-gray-500">&gt;</span>
+                        <span class="text-xs text-gray-600 cursor-default">${category2}</span>`
+                      : ""
+                  }
                 </div>
-                <!-- 1depth 카테고리 -->
-                <div class="flex flex-wrap gap-2">
-                    ${
-                      isLoading
-                        ? `<div class="text-sm text-gray-500 italic">카테고리 로딩 중...</div>`
-                        : CATEGORIES.map(createCategoryButton).join("")
-                    }
-                </div>
+
+                ${
+                  isCategoryLoading
+                    ? `<div class="text-sm text-gray-500 italic">카테고리 로딩 중...</div>`
+                    : selectedCategory1
+                      ? `
+                        <div class="flex flex-wrap gap-2">
+                          ${selectedCategory1.children.map((child) => createCategory2Button(child.name, child.name === category2)).join("")}
+                        </div>
+                      `
+                      : `
+                        <div class="flex flex-wrap gap-2">
+                          ${categoryTree.map((category) => createCategory1Button(category.name)).join("")}
+                        </div>
+                      `
+                }
                
-                <!-- 2depth 카테고리 -->
               </div>
               <!-- 기존 필터들 -->
               <div class="flex gap-2 items-center justify-between">

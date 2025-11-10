@@ -2,7 +2,7 @@ import SearchFilter from "../components/SearchFilter";
 import ProductList from "../components/ProductList";
 import { Router } from "../router";
 import { createComponent } from "../core/BaseComponent";
-import { getProducts } from "../api/productApi";
+import { getProducts, getCategories } from "../api/productApi";
 import { cartStore } from "../stores/cartStore";
 import { showToast } from "../components/Toast";
 import ErrorView from "../components/ErrorView";
@@ -20,6 +20,8 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
       category1: "",
       category2: "",
     },
+    categories: [],
+    isCategoryLoading: false,
     isLoading: false,
     error: null,
   });
@@ -49,12 +51,27 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
     }
   };
 
+  const fetchCategories = async () => {
+    setState({ isCategoryLoading: true });
+    const categories = await getCategories();
+    setState({ categories, isCategoryLoading: false });
+  };
+
   template((state) => {
-    const { searchValue = "", data, isLoading, error, filter } = state;
+    const { searchValue = "", data, isLoading, error, filter, categories, isCategoryLoading } = state;
 
     if (error) {
       return `
-        ${SearchFilter({ isLoading: false, searchValue, limit: filter.limit || 10, sort: filter.sort || "price_asc" })}
+        ${SearchFilter({
+          isLoading: false,
+          isCategoryLoading,
+          searchValue,
+          categories,
+          category1: filter.category1 || "",
+          category2: filter.category2 || "",
+          limit: filter.limit || 10,
+          sort: filter.sort || "price_asc",
+        })}
         ${ErrorView({ message: error.message })}
       `;
     }
@@ -63,7 +80,16 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
     const pagination = data?.pagination || {};
 
     return `
-      ${SearchFilter({ isLoading, searchValue, limit: filter.limit || 10, sort: filter.sort || "price_asc" })}
+      ${SearchFilter({
+        isLoading,
+        isCategoryLoading,
+        searchValue,
+        categories,
+        category1: filter.category1 || "",
+        category2: filter.category2 || "",
+        limit: filter.limit || 10,
+        sort: filter.sort || "price_asc",
+      })}
       ${ProductList({ products, pagination, isLoading, hasNext: pagination.hasNext })}
     `;
   });
@@ -148,10 +174,55 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
       fetchProducts();
     };
 
+    // 카테고리 클릭 핸들러
+    const onCategoryClick = (e) => {
+      const resetBtn = e.target.closest("[data-breadcrumb='reset']");
+      if (resetBtn) {
+        const currentFilter = getState().filter;
+        setState({
+          filter: { ...currentFilter, category1: "", category2: "", page: 1 },
+          data: null,
+        });
+        fetchProducts();
+        return;
+      }
+
+      // 카테고리1 클릭 (버튼 또는 브레드크럼)
+      const category1Btn = e.target.closest(".category1-filter-btn");
+      const category1Breadcrumb = e.target.closest("[data-breadcrumb='category1']");
+      if (category1Btn || category1Breadcrumb) {
+        const category1 = (category1Btn || category1Breadcrumb).getAttribute("data-category1");
+        const currentFilter = getState().filter;
+
+        // 카테고리1 선택 (카테고리2 항상 초기화)
+        setState({
+          filter: { ...currentFilter, category1, category2: "", page: 1 },
+          data: null,
+        });
+        fetchProducts();
+        return;
+      }
+
+      // 카테고리2 클릭
+      const category2Btn = e.target.closest(".category2-filter-btn");
+      if (category2Btn) {
+        const category2 = category2Btn.getAttribute("data-category2");
+        const currentFilter = getState().filter;
+
+        setState({
+          filter: { ...currentFilter, category2, page: 1 },
+          data: null,
+        });
+        fetchProducts();
+        return;
+      }
+    };
+
     on(root, "click", onCardClick);
     on(root, "click", onAddToCart);
     on(root, "click", onRetry);
     on(root, "click", onLoadMore);
+    on(root, "click", onCategoryClick);
     on(root, "keydown", onSearchKeydown);
     on(root, "change", (e) => {
       const limitSelect = e.target.closest("#limit-select");
@@ -171,6 +242,7 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
 
     // 최초 데이터 로드
     fetchProducts();
+    fetchCategories();
   });
 
   // 매 렌더링마다 - sentinel 다시 관찰
