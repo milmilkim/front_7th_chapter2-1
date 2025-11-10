@@ -18,7 +18,13 @@ const ProductList = ({ products = [], pagination = {}, isLoading = false, hasNex
           ${products?.map((p) => ProductCard(p)).join("")}
           ${isLoading ? LoadingSkeleton().repeat(4) : ""}
         </div>
-        ${hasNext ? `<div id="sentinel" class="h-4"></div>` : ""}
+        ${
+          hasNext
+            ? `<div id="sentinel" class="h-4"></div>`
+            : ` <div class="text-center py-4 text-sm text-gray-500">
+                모든 상품을 확인했습니다
+              </div>`
+        }
         ${isLoading ? `<div class="text-center py-4">${LoadingSpinner()}</div>` : ""}
       </div>
     </div>
