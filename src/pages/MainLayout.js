@@ -1,5 +1,6 @@
 import Header from "../components/Header";
 import Toast from "../components/Toast";
+import CartModal from "../components/CartModal";
 
 const MainLayout = () => {
   return /*html*/ `
@@ -16,16 +17,23 @@ const MainLayout = () => {
         </footer>
         <div id="notification-container"></div>
         ${Toast()}
+        <div id="cart-modal-container"></div>
       </div>
     `;
 };
 
 let headerInstance = null;
+let cartModalInstance = null;
 
 export const initMainLayout = () => {
   const headerContainer = document.getElementById("header-container");
   if (headerContainer && !headerInstance) {
     headerInstance = Header({ root: headerContainer, options: { name: "Header" } });
+  }
+
+  const cartModalContainer = document.getElementById("cart-modal-container");
+  if (cartModalContainer && !cartModalInstance) {
+    cartModalInstance = CartModal({ root: cartModalContainer, options: { name: "CartModal" } });
   }
 };
 

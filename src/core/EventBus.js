@@ -71,4 +71,7 @@ export const eventBus = new EventBus();
 export const Events = {
   // 라우팅 관련
   ROUTE_CHANGED: "route:changed",
+  // 모달 관련
+  CART_MODAL_OPEN: "cart:modal:open",
+  CART_MODAL_CLOSE: "cart:modal:close",
 };

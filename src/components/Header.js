@@ -44,7 +44,7 @@ const shouldShowBackButton = (path) => {
   return path.startsWith("/product/");
 };
 
-const Header = createComponent(({ setState, template, onMount }) => {
+const Header = createComponent(({ root, setState, template, onMount, on }) => {
   setState({
     currentPath: window.location.pathname,
     cartCount: 0,
@@ -103,6 +103,16 @@ const Header = createComponent(({ setState, template, onMount }) => {
         setState({ currentPath: path });
       }
     });
+
+    // 장바구니 아이콘 클릭 시 모달 열기
+    const handleCartIconClick = (e) => {
+      const btn = e.target.closest("#cart-icon-btn");
+      if (btn) {
+        eventBus.emit(Events.CART_MODAL_OPEN);
+      }
+    };
+
+    on(root, "click", handleCartIconClick);
   });
 });
 

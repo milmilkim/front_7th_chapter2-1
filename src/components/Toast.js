@@ -49,7 +49,7 @@ const toastTemplates = {
 
 const Toast = () => {
   return /*html*/ `
-    <div id="toast-container" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50"></div>
+    <div id="toast-container" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[60]"></div>
   `;
 };
 
