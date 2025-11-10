@@ -3,6 +3,8 @@ import { Router } from "../router";
 import ProductInfo from "../components/ProductInfo";
 import RelatedProducts from "../components/RelatedProducts";
 import { getProduct, getProducts } from "../api/productApi";
+import { cartStore } from "../stores/cartStore";
+import { showToast } from "../components/Toast";
 
 const pageLoading = () => {
   return /*html*/ `
@@ -36,7 +38,6 @@ const DetailPage = ({ root, params }) => {
       `;
     });
 
-    // 최초 1번만 - DOM 이벤트 위임
     onMount(({ root, on }) => {
       const onQuantityIncrease = (e) => {
         const btn = e.target.closest("#quantity-increase");
@@ -83,17 +84,12 @@ const DetailPage = ({ root, params }) => {
         const state = getState();
         const productId = btn.getAttribute("data-product-id");
 
-        console.log("productId", productId);
-
-        // 상품 정보가 이미 state에 있음
         if (state.product) {
-          window.dispatchEvent(
-            new CustomEvent("cart:add", {
-              detail: { id: productId, quantity: state.quantity, product: state.product },
-            }),
-          );
+          cartStore.addItem(productId, state.quantity, state.product);
+          showToast("장바구니에 추가되었습니다", "success");
         } else {
-          console.error("상품 정보가 없습니다");
+          console.error("상품 정보를 찾을 수 없습니다");
+          showToast("상품 정보를 찾을 수 없습니다", "error");
         }
       };
 

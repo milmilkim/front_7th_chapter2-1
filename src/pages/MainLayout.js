@@ -1,6 +1,5 @@
 import Header from "../components/Header";
-import Toast, { showToast } from "../components/Toast";
-import { cartStore } from "../stores/cartStore";
+import Toast from "../components/Toast";
 
 const MainLayout = () => {
   return /*html*/ `
@@ -28,30 +27,6 @@ export const initMainLayout = () => {
   if (headerContainer && !headerInstance) {
     headerInstance = Header({ root: headerContainer });
   }
-
-  const handleCartAdd = (e) => {
-    const { id, quantity = 1, product } = e.detail || {};
-
-    if (!id) {
-      return;
-    }
-
-    if (!product) {
-      showToast("장바구니 추가에 실패했습니다", "error");
-      return;
-    }
-
-    const success = cartStore.addItem(id, quantity, product);
-
-    if (success) {
-      showToast("장바구니에 추가되었습니다", "success");
-    } else {
-      showToast("장바구니 추가에 실패했습니다", "error");
-    }
-  };
-
-  window.removeEventListener("cart:add", handleCartAdd);
-  window.addEventListener("cart:add", handleCartAdd);
 };
 
 export default MainLayout;

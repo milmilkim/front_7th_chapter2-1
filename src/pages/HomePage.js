@@ -5,6 +5,8 @@ import ProductCard from "../components/ProductCard";
 import { Router } from "../router";
 import { createComponent } from "../core/BasePage";
 import { getProducts } from "../api/productApi";
+import { cartStore } from "../stores/cartStore";
+import { showToast } from "../components/Toast";
 
 const HomePage = ({ root }) => {
   const router = Router();
@@ -55,18 +57,15 @@ const HomePage = ({ root }) => {
         const id = btn.getAttribute("data-product-id");
         if (!id) return;
 
-        // 상품 목록에서 해당 상품 찾기
         const state = getState();
         const product = state.products?.find((p) => p.productId === id);
 
         if (product) {
-          window.dispatchEvent(
-            new CustomEvent("cart:add", {
-              detail: { id: id, quantity: 1, product },
-            }),
-          );
+          cartStore.addItem(id, 1, product);
+          showToast("장바구니에 추가되었습니다", "success");
         } else {
           console.error("상품을 찾을 수 없습니다:", id);
+          showToast("상품 정보를 찾을 수 없습니다", "error");
         }
       };
 
