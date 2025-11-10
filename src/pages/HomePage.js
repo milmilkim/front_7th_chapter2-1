@@ -4,8 +4,8 @@ import { Router } from "../router";
 import { createComponent } from "../core/BaseComponent";
 import { getProducts, getCategories } from "../api/productApi";
 import { cartStore } from "../stores/cartStore";
-import { showToast } from "../components/Toast";
 import ErrorView from "../components/ErrorView";
+import { showToast } from "../components/Toast";
 
 const HomePage = createComponent(({ root, getState, setState, template, onMount, onUpdated, on }) => {
   const router = Router();

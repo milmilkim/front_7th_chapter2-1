@@ -352,6 +352,7 @@ const CartModal = createComponent(({ root, getState, setState, template, onMount
 
       const productId = btn.getAttribute("data-product-id");
       cartStore.removeItem(productId);
+      showToast("상품이 삭제되었습니다", "info");
     };
 
     // 선택한 상품 삭제
@@ -372,7 +373,7 @@ const CartModal = createComponent(({ root, getState, setState, template, onMount
 
       cartStore.clear();
       setState({ selectedItems: new Set() });
-      showToast("장바구니가 비워졌습니다", "success");
+      showToast("장바구니가 비워졌습니다", "info");
     };
 
     // 구매하기
@@ -386,7 +387,7 @@ const CartModal = createComponent(({ root, getState, setState, template, onMount
         return;
       }
 
-      showToast("구매 기능은 준비 중입니다", "info");
+      showToast("구매 기능은 추후 구현 예정입니다.", "info");
     };
 
     // 상품 클릭 (상세 페이지로 이동)

@@ -106,6 +106,21 @@ const DetailPage = createComponent(({ root, getState, setState, template, onMoun
       router.push("/");
     };
 
+    const onBreadcrumbClick = (e) => {
+      const btn = e.target.closest(".breadcrumb-link");
+      if (!btn) return;
+
+      const category1 = getState().product.category1;
+      const category2 = getState().product.category2;
+
+      if (btn.getAttribute("data-category1")) {
+        router.push(`/?category1=${encodeURIComponent(category1)}`);
+      }
+      if (btn.getAttribute("data-category2")) {
+        router.push(`/?category1=${encodeURIComponent(category1)}&category2=${encodeURIComponent(category2)}`);
+      }
+    };
+
     on(root, "click", onQuantityIncrease);
     on(root, "click", onQuantityDecrease);
     on(root, "input", onQuantityInput);
@@ -113,6 +128,7 @@ const DetailPage = createComponent(({ root, getState, setState, template, onMoun
     on(root, "click", onAddToCart);
     on(root, "click", onRelatedProductClick);
     on(root, "click", onGoToList);
+    on(root, "click", onBreadcrumbClick);
   });
 
   (async () => {

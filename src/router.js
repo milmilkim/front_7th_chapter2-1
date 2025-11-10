@@ -80,7 +80,9 @@ export const Router = (() => {
       // 경로와 쿼리스트링 분리
       const [pathname, queryString] = path.split("?");
       const normalizedCurrent = normalizePath(window.location.pathname);
-      const normalizedNew = normalizePath(pathname);
+
+      const normalizedNew = normalizePath(pathname.split("?")[0]);
+      // const normalizedNewQuery = queryString ? `?${queryString}` : "";
       const newSearch = queryString ? `?${queryString}` : "";
 
       // pathname과 쿼리스트링이 모두 같으면 중복 이동 방지
