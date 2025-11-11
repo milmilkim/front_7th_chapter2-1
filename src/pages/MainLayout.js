@@ -8,13 +8,14 @@ const MainLayout = createComponent(({ template, onMounted }) => {
   onMounted(() => {
     const header = Header({ root: document.getElementById("header-container"), options: { name: "header" } });
     header.render();
-    initRouter();
 
     const cartModal = CartModal({
       root: document.getElementById("cart-modal-container"),
       options: { name: "cartModal" },
     });
     cartModal.render();
+
+    initRouter();
   });
 
   template(() => {

@@ -7,7 +7,7 @@ import { cartStore } from "../stores/cartStore";
 import ErrorView from "../components/ErrorView";
 import { showToast } from "../components/Toast";
 import { eventBus, Events } from "../core/EventBus";
-const HomePage = createComponent(({ root, getState, setState, template, onMount, onUpdated, onUnmount, on }) => {
+const HomePage = createComponent(({ root, getState, setState, template, onBeforeMount, onUpdated, onUnmount, on }) => {
   const router = Router();
   const queryParams = useQueryParams();
 
@@ -103,7 +103,7 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
   let unsubscribeQueryChange = null;
 
   // 최초 1번만 - DOM 이벤트 위임
-  onMount(() => {
+  onBeforeMount(() => {
     // 쿼리 변경 이벤트 구독
     unsubscribeQueryChange = eventBus.on(Events.QUERY_CHANGED, (queryParams) => {
       const { filter } = getState();
@@ -187,6 +187,7 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
   });
 
   const onCardClick = (e) => {
+    console.log("onCardClick");
     const btn = e.target.closest(".add-to-cart-btn");
     if (btn) return;
     const card = e.target.closest(".product-card");

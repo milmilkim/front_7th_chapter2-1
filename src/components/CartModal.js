@@ -4,7 +4,7 @@ import { cartStore } from "../stores/cartStore";
 import { formatPrice } from "../utils/formatters";
 import { showToast } from "./Toast";
 
-const CartModal = createComponent(({ root, getState, setState, template, onMount, onUnmount, on, useStore }) => {
+const CartModal = createComponent(({ root, getState, setState, template, onBeforeMount, onUnmount, on, useStore }) => {
   setState({
     isOpen: false,
     selectedItems: new Set(),
@@ -225,7 +225,7 @@ const CartModal = createComponent(({ root, getState, setState, template, onMount
   let unsubscribeClose = null;
   let handleEscape = null;
 
-  onMount(() => {
+  onBeforeMount(() => {
     // 초기 선택 상태 동기화
     setState({
       selectedItems: new Set(

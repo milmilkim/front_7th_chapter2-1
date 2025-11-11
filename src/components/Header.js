@@ -44,7 +44,7 @@ const shouldShowBackButton = (path) => {
   return path.startsWith("/product/");
 };
 
-const Header = createComponent(({ root, setState, template, onMount, onUnmount, on, useStore }) => {
+const Header = createComponent(({ root, setState, template, onBeforeMount, onUnmount, on, useStore }) => {
   useStore(cartStore);
   setState({
     currentPath: window.location.pathname,
@@ -93,24 +93,23 @@ const Header = createComponent(({ root, setState, template, onMount, onUnmount, 
   });
 
   // 컴포넌트 생성 시점에 바로 실행 (이벤트 구독 등)
-  onMount(() => {
+  onBeforeMount(() => {
     // 라우트 변경 이벤트 구독
     unsubscribeRouteChange = eventBus.on(Events.ROUTE_CHANGED, (path) => {
       if (path) {
         setState({ currentPath: path });
       }
     });
-
-    // 장바구니 아이콘 클릭 시 모달 열기
-    const handleCartIconClick = (e) => {
-      const btn = e.target.closest("#cart-icon-btn");
-      if (btn) {
-        eventBus.emit(Events.CART_MODAL_OPEN);
-      }
-    };
-
-    on(root, "click", handleCartIconClick);
   });
+
+  // 장바구니 아이콘 클릭 시 모달 열기
+  const handleCartIconClick = (e) => {
+    const btn = e.target.closest("#cart-icon-btn");
+    if (btn) {
+      eventBus.emit(Events.CART_MODAL_OPEN);
+    }
+  };
+  on(root, "click", handleCartIconClick);
 
   onUnmount(() => {
     if (unsubscribeRouteChange) unsubscribeRouteChange();

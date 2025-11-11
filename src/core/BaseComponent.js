@@ -2,13 +2,18 @@ export const createComponent = (setup) => {
   return ({ root, props = {}, options }) => {
     let state = {};
     let view = () => "";
-    const mountCallbacks = [];
+
+    /**
+     * lifecycle callbacks
+     */
+    const beforeMountCallbacks = [];
     const mountedCallbacks = [];
+    const updatedCallbacks = [];
     const unmountCallbacks = [];
-    const renderCallbacks = [];
+
     let isMounted = false;
-    let mountCleanups = [];
-    let renderCleanups = [];
+
+    const mountedCleanups = [];
 
     const getState = () => ({ ...state });
     const setState = (patch) => {
@@ -22,78 +27,66 @@ export const createComponent = (setup) => {
 
     // DOM 이벤트 헬퍼 (자동 cleanup)
     const on = (target, event, handler) => {
+      if (!target) return;
       target.addEventListener(event, handler);
-      mountCleanups.push(() => target.removeEventListener(event, handler));
+      unmountCallbacks.push(() => target.removeEventListener(event, handler));
     };
 
-    // 최초 1번만 실행 (이벤트 구독 등)
-    const onMount = (fn) => {
-      console.log(`${options?.name || "component"} onMount`);
-
-      mountCallbacks.push(fn);
-    };
-
-    // 언마운트 시 실행 (구독 해지 등)
-    const onUnmount = (fn) => {
-      unmountCallbacks.push(fn);
-    };
-
-    // 매 업데이트마다 실행 (DOM 이벤트 바인딩)
-    const onUpdated = (fn) => {
-      renderCallbacks.push(fn);
+    const onBeforeMount = (fn) => {
+      beforeMountCallbacks.push(fn);
     };
 
     const onMounted = (fn) => {
       mountedCallbacks.push(fn);
     };
 
-    const render = () => {
-      // 이전 render 바인딩 제거
-      renderCleanups.forEach((fn) => fn && fn());
-      renderCleanups = [];
-
-      // 그리기
-      root.innerHTML = view(state);
-
-      // render 후 콜백 실행 (DOM 이벤트용)
-      renderCallbacks.forEach((fn) => {
-        const cleanup = fn();
-        if (typeof cleanup === "function") renderCleanups.push(cleanup);
-      });
-
-      if (isMounted) return;
-      mountedCallbacks.forEach((fn) => fn && fn());
-      isMounted = true;
+    const onUpdated = (fn) => {
+      updatedCallbacks.push(fn);
     };
 
-    // 스토어 구독 헬퍼 - subscribe만 처리 (반환 없음)
+    const onUnmount = (fn) => {
+      unmountCallbacks.push(fn);
+    };
+
+    // 스토어 구독 헬퍼 - subscribe만 처리
     const useStore = (store) => {
       const unsubscribe = store.subscribe(() => {
-        // 스토어 변경 시 리렌더 트리거
         render();
       });
 
-      mountCleanups.push(unsubscribe);
+      mountedCleanups.push(unsubscribe);
     };
 
-    // setup 함수 실행 (props 전달)
-    setup({ root, props, getState, setState, template, onMount, onMounted, onUnmount, onUpdated, on, useStore });
-    // render();
+    const render = () => {
+      root.innerHTML = view(state);
 
-    // mount 콜백 실행 (최초 1번만)
-    mountCallbacks.forEach((fn) => {
-      const cleanup = fn();
-      if (typeof cleanup === "function") mountCleanups.push(cleanup);
+      // 최초 렌더링일 경우 실행
+      if (!isMounted) {
+        console.log(`✅ onMounted: ${options?.name || "component"}`);
+        mountedCallbacks.forEach((fn) => fn && fn());
+        isMounted = true;
+      }
+
+      updatedCallbacks.forEach((fn) => {
+        fn();
+      });
+    };
+
+    setup({ root, props, getState, setState, template, onBeforeMount, onMounted, onUnmount, onUpdated, on, useStore });
+
+    beforeMountCallbacks.forEach((fn) => {
+      fn();
     });
 
     const unmount = () => {
-      console.log(`${options?.name || "component"} unmount`);
-      unmountCallbacks.forEach((fn) => fn && fn());
-      mountCleanups.forEach((fn) => fn && fn());
-      renderCleanups.forEach((fn) => fn && fn());
-      mountCleanups = [];
-      renderCleanups = [];
+      console.log(`🧨 unmount: ${options?.name || "component"}`);
+      unmountCallbacks.forEach((fn) => fn());
+      mountedCleanups.forEach((fn) => fn());
+
       root.replaceChildren();
+
+      unmountCallbacks.length = 0;
+      mountedCleanups.length = 0;
     };
 
     return {

@@ -17,7 +17,7 @@ const pageLoading = () => {
   `;
 };
 
-const DetailPage = createComponent(({ root, getState, setState, template, onMount, on, useStore }) => {
+const DetailPage = createComponent(({ root, getState, setState, template, on, useStore }) => {
   const router = Router();
   const params = useParams();
   const productId = params?.productId;
@@ -41,98 +41,96 @@ const DetailPage = createComponent(({ root, getState, setState, template, onMoun
     `;
   });
 
-  onMount(() => {
-    const onQuantityIncrease = (e) => {
-      const btn = e.target.closest("#quantity-increase");
-      if (!btn) return;
-      const state = getState();
-      const max = parseInt(state.product?.stock ?? 1);
-      const currentQuantity = state.quantity || 1;
-      if (currentQuantity < max) {
-        setState({ quantity: currentQuantity + 1 });
-      }
-    };
+  const onQuantityIncrease = (e) => {
+    const btn = e.target.closest("#quantity-increase");
+    if (!btn) return;
+    const state = getState();
+    const max = parseInt(state.product?.stock ?? 1);
+    const currentQuantity = state.quantity || 1;
+    if (currentQuantity < max) {
+      setState({ quantity: currentQuantity + 1 });
+    }
+  };
 
-    const onQuantityDecrease = (e) => {
-      const btn = e.target.closest("#quantity-decrease");
-      if (!btn) return;
-      const state = getState();
-      const currentQuantity = state.quantity || 1;
-      if (currentQuantity > 1) {
-        setState({ quantity: currentQuantity - 1 });
-      }
-    };
+  const onQuantityDecrease = (e) => {
+    const btn = e.target.closest("#quantity-decrease");
+    if (!btn) return;
+    const state = getState();
+    const currentQuantity = state.quantity || 1;
+    if (currentQuantity > 1) {
+      setState({ quantity: currentQuantity - 1 });
+    }
+  };
 
-    const onQuantityInput = (e) => {
-      const input = e.target.closest("#quantity-input");
-      if (!input) return;
-      const value = parseInt(e.target.value) || 1;
-      const state = getState();
-      const max = parseInt(state.product?.stock ?? 1);
-      setState({ quantity: Math.max(1, Math.min(value, max)) });
-    };
+  const onQuantityInput = (e) => {
+    const input = e.target.closest("#quantity-input");
+    if (!input) return;
+    const value = parseInt(e.target.value) || 1;
+    const state = getState();
+    const max = parseInt(state.product?.stock ?? 1);
+    setState({ quantity: Math.max(1, Math.min(value, max)) });
+  };
 
-    const onQuantityChange = (e) => {
-      const input = e.target.closest("#quantity-input");
-      if (!input) return;
-      const value = parseInt(e.target.value) || 1;
-      const state = getState();
-      const max = parseInt(state.product?.stock ?? 1);
-      setState({ quantity: Math.max(1, Math.min(value, max)) });
-    };
+  const onQuantityChange = (e) => {
+    const input = e.target.closest("#quantity-input");
+    if (!input) return;
+    const value = parseInt(e.target.value) || 1;
+    const state = getState();
+    const max = parseInt(state.product?.stock ?? 1);
+    setState({ quantity: Math.max(1, Math.min(value, max)) });
+  };
 
-    const onAddToCart = (e) => {
-      const btn = e.target.closest("#add-to-cart-btn");
-      if (!btn) return;
-      const state = getState();
-      const productId = btn.getAttribute("data-product-id");
+  const onAddToCart = (e) => {
+    const btn = e.target.closest("#add-to-cart-btn");
+    if (!btn) return;
+    const state = getState();
+    const productId = btn.getAttribute("data-product-id");
 
-      if (state.product) {
-        cartStore.getState().addItem(productId, state.quantity, state.product);
-        showToast("장바구니에 추가되었습니다", "success");
-      } else {
-        console.error("상품 정보를 찾을 수 없습니다");
-        showToast("상품 정보를 찾을 수 없습니다", "error");
-      }
-    };
+    if (state.product) {
+      cartStore.getState().addItem(productId, state.quantity, state.product);
+      showToast("장바구니에 추가되었습니다", "success");
+    } else {
+      console.error("상품 정보를 찾을 수 없습니다");
+      showToast("상품 정보를 찾을 수 없습니다", "error");
+    }
+  };
 
-    const onRelatedProductClick = (e) => {
-      const card = e.target.closest(".related-product-card");
-      if (!card) return;
-      const id = card.getAttribute("data-product-id");
-      if (id) router.push(`/product/${id}`);
-    };
+  const onRelatedProductClick = (e) => {
+    const card = e.target.closest(".related-product-card");
+    if (!card) return;
+    const id = card.getAttribute("data-product-id");
+    if (id) router.push(`/product/${id}`);
+  };
 
-    const onGoToList = (e) => {
-      const btn = e.target.closest(".go-to-product-list");
-      if (!btn) return;
-      router.push("/");
-    };
+  const onGoToList = (e) => {
+    const btn = e.target.closest(".go-to-product-list");
+    if (!btn) return;
+    router.push("/");
+  };
 
-    const onBreadcrumbClick = (e) => {
-      const btn = e.target.closest(".breadcrumb-link");
-      if (!btn) return;
+  const onBreadcrumbClick = (e) => {
+    const btn = e.target.closest(".breadcrumb-link");
+    if (!btn) return;
 
-      const category1 = getState().product.category1;
-      const category2 = getState().product.category2;
+    const category1 = getState().product.category1;
+    const category2 = getState().product.category2;
 
-      if (btn.getAttribute("data-category1")) {
-        router.push(`/?category1=${encodeURIComponent(category1)}`);
-      }
-      if (btn.getAttribute("data-category2")) {
-        router.push(`/?category1=${encodeURIComponent(category1)}&category2=${encodeURIComponent(category2)}`);
-      }
-    };
+    if (btn.getAttribute("data-category1")) {
+      router.push(`/?category1=${encodeURIComponent(category1)}`);
+    }
+    if (btn.getAttribute("data-category2")) {
+      router.push(`/?category1=${encodeURIComponent(category1)}&category2=${encodeURIComponent(category2)}`);
+    }
+  };
 
-    on(root, "click", onQuantityIncrease);
-    on(root, "click", onQuantityDecrease);
-    on(root, "input", onQuantityInput);
-    on(root, "change", onQuantityChange);
-    on(root, "click", onAddToCart);
-    on(root, "click", onRelatedProductClick);
-    on(root, "click", onGoToList);
-    on(root, "click", onBreadcrumbClick);
-  });
+  on(root, "click", onQuantityIncrease);
+  on(root, "click", onQuantityDecrease);
+  on(root, "input", onQuantityInput);
+  on(root, "change", onQuantityChange);
+  on(root, "click", onAddToCart);
+  on(root, "click", onRelatedProductClick);
+  on(root, "click", onGoToList);
+  on(root, "click", onBreadcrumbClick);
 
   (async () => {
     try {
