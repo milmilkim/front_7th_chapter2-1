@@ -381,8 +381,7 @@ const CartModal = createComponent(({ root, getState, setState, template, onMount
       const btn = e.target.closest("#cart-modal-checkout-btn");
       if (!btn) return;
 
-      const state = getState();
-      if (state.items.length === 0) {
+      if (cartStore.getState().items.length === 0) {
         showToast("장바구니가 비어있습니다", "error");
         return;
       }
