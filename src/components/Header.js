@@ -44,14 +44,18 @@ const shouldShowBackButton = (path) => {
   return path.startsWith("/product/");
 };
 
-const Header = createComponent(({ root, setState, template, onMount, on }) => {
+const Header = createComponent(({ root, setState, template, onMount, onUnmount, on, useStore }) => {
   setState({
     currentPath: window.location.pathname,
-    cartCount: 0,
   });
 
+  useStore(cartStore);
+
+  let unsubscribeRouteChange = null;
+
   template((state) => {
-    const { currentPath, cartCount } = state;
+    const { currentPath } = state;
+    const cartCount = cartStore.getState().items.length;
     const title = getTitleByPath(currentPath);
     const showBackButton = shouldShowBackButton(currentPath);
     const titleTemplate = getTitleTemplateByPath(currentPath, title);
@@ -90,15 +94,10 @@ const Header = createComponent(({ root, setState, template, onMount, on }) => {
     `;
   });
 
-  // 최초 1번만 실행 - Store & EventBus 구독
+  // 최초 1번만 실행 - EventBus 구독
   onMount(() => {
-    // 장바구니 Store 구독 (자동 재렌더!)
-    cartStore.subscribe((cartState) => {
-      setState({ cartCount: cartState.items.length });
-    });
-
     // 라우트 변경 이벤트 구독
-    eventBus.on(Events.ROUTE_CHANGED, (path) => {
+    unsubscribeRouteChange = eventBus.on(Events.ROUTE_CHANGED, (path) => {
       if (path) {
         setState({ currentPath: path });
       }
@@ -113,6 +112,10 @@ const Header = createComponent(({ root, setState, template, onMount, on }) => {
     };
 
     on(root, "click", handleCartIconClick);
+  });
+
+  onUnmount(() => {
+    if (unsubscribeRouteChange) unsubscribeRouteChange();
   });
 });
 

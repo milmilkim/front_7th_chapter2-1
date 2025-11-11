@@ -21,14 +21,12 @@ export function createStore(createState) {
 
   const subscribe = (listener) => {
     listeners.add(listener);
-    listener(state);
     return () => listeners.delete(listener);
   };
 
   state = createState(setState, getState);
 
   return {
-    ...state,
     getState,
     subscribe,
   };

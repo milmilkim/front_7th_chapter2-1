@@ -56,8 +56,18 @@ export const createComponent = (setup) => {
       });
     };
 
+    // 스토어 구독 헬퍼 - subscribe만 처리 (반환 없음)
+    const useStore = (store) => {
+      const unsubscribe = store.subscribe(() => {
+        // 스토어 변경 시 리렌더 트리거
+        render();
+      });
+
+      mountCleanups.push(unsubscribe);
+    };
+
     // setup 함수 실행 (props 전달)
-    setup({ root, props, getState, setState, template, onMount, onUnmount, onUpdated, on });
+    setup({ root, props, getState, setState, template, onMount, onUnmount, onUpdated, on, useStore });
     render();
 
     // mount 콜백 실행 (최초 1번만)
@@ -69,7 +79,7 @@ export const createComponent = (setup) => {
     return {
       getState,
       setState,
-      unmount() {
+      unmount: () => {
         console.log(`${options?.name || "component"} unmount`);
         unmountCallbacks.forEach((fn) => fn && fn());
         mountCleanups.forEach((fn) => fn && fn());

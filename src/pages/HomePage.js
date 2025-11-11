@@ -7,8 +7,7 @@ import { cartStore } from "../stores/cartStore";
 import ErrorView from "../components/ErrorView";
 import { showToast } from "../components/Toast";
 import { eventBus, Events } from "../core/EventBus";
-
-const HomePage = createComponent(({ root, getState, setState, template, onMount, onUpdated, on }) => {
+const HomePage = createComponent(({ root, getState, setState, template, onMount, onUpdated, onUnmount, on }) => {
   const router = Router();
   const queryParams = useQueryParams();
 
@@ -61,6 +60,7 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
   };
 
   template((state) => {
+    // 컴포넌트 로컬 상태
     const { searchValue = "", data, isLoading, error, filter, categories, isCategoryLoading } = state;
 
     if (error) {
@@ -100,11 +100,12 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
   // 무한 스크롤 옵저버 (컴포넌트 레벨에서 한 번만 생성)
   let observer = null;
   let previousQueryParams = null;
+  let unsubscribeQueryChange = null;
 
   // 최초 1번만 - DOM 이벤트 위임
   onMount(() => {
     // 쿼리 변경 이벤트 구독
-    const unsubscribeQueryChange = eventBus.on(Events.QUERY_CHANGED, (queryParams) => {
+    unsubscribeQueryChange = eventBus.on(Events.QUERY_CHANGED, (queryParams) => {
       const { filter } = getState();
       const currentPage = parseInt(queryParams.current) || 1;
 
@@ -175,139 +176,139 @@ const HomePage = createComponent(({ root, getState, setState, template, onMount,
       });
     });
 
-    const onCardClick = (e) => {
-      const btn = e.target.closest(".add-to-cart-btn");
-      if (btn) return;
-      const card = e.target.closest(".product-card");
-      if (!card) return;
-      const id = card.getAttribute("data-product-id");
-      if (id) router.push(`/product/${id}`);
-    };
-
-    const onAddToCart = (e) => {
-      const btn = e.target.closest(".add-to-cart-btn");
-      if (!btn) return;
-      const id = btn.getAttribute("data-product-id");
-      if (!id) return;
-
-      const { data } = getState();
-      const products = data?.products || [];
-      const product = products.find((p) => p.productId === id);
-
-      if (product) {
-        cartStore.addItem(id, 1, product);
-        showToast("장바구니에 추가되었습니다", "success");
-      } else {
-        console.error("상품을 찾을 수 없습니다:", id);
-        showToast("상품 정보를 찾을 수 없습니다", "error");
-      }
-    };
-
-    // 엔터키로 즉시 검색
-    const onSearchKeydown = (e) => {
-      const input = e.target.closest("#search-input");
-      if (!input) return;
-      if (e.key !== "Enter") return;
-
-      const searchValue = input.value.trim();
-      const queryParams = new URLSearchParams(window.location.search);
-      if (searchValue) {
-        queryParams.set("search", searchValue);
-      } else {
-        queryParams.delete("search");
-      }
-      queryParams.set("current", "1");
-      router.push(`/?${queryParams.toString()}`);
-    };
-
-    const onRetry = (e) => {
-      const btn = e.target.closest("#retry-btn");
-      if (!btn) return;
-      fetchProducts();
-    };
-
-    const onLoadMore = (e) => {
-      const btn = e.target.closest("#load-more-btn");
-      if (!btn) return;
-      const { filter } = getState();
-      const nextPage = filter.page + 1;
-      setState({ filter: { ...filter, page: nextPage } });
-
-      // 쿼리스트링 업데이트 (페칭은 하지 않음)
-      const queryParams = new URLSearchParams(window.location.search);
-      queryParams.set("current", nextPage.toString());
-      window.history.replaceState({}, "", `/?${queryParams.toString()}`);
-
-      fetchProducts();
-    };
-
-    // 카테고리 클릭 핸들러
-    const onCategoryClick = (e) => {
-      const resetBtn = e.target.closest("[data-breadcrumb='reset']");
-      if (resetBtn) {
-        router.push(`/`);
-        return;
-      }
-
-      // 카테고리1 클릭 (버튼 또는 브레드크럼)
-      const category1Btn = e.target.closest(".category1-filter-btn");
-      const category1Breadcrumb = e.target.closest("[data-breadcrumb='category1']");
-      if (category1Btn || category1Breadcrumb) {
-        const category1 = (category1Btn || category1Breadcrumb).getAttribute("data-category1");
-        const queryParams = new URLSearchParams(window.location.search);
-        queryParams.set("category1", category1);
-        queryParams.delete("category2"); // category1 선택 시 category2 초기화
-        queryParams.set("current", "1");
-        router.push(`/?${queryParams.toString()}`);
-        return;
-      }
-
-      // 카테고리2 클릭
-      const category2Btn = e.target.closest(".category2-filter-btn");
-      if (category2Btn) {
-        const category2 = category2Btn.getAttribute("data-category2");
-        const queryParams = new URLSearchParams(window.location.search);
-        queryParams.set("category2", category2);
-        queryParams.set("current", "1");
-        router.push(`/?${queryParams.toString()}`);
-        return;
-      }
-    };
-
-    on(root, "click", onCardClick);
-    on(root, "click", onAddToCart);
-    on(root, "click", onRetry);
-    on(root, "click", onLoadMore);
-    on(root, "click", onCategoryClick);
-    on(root, "keydown", onSearchKeydown);
-    on(root, "change", (e) => {
-      const limitSelect = e.target.closest("#limit-select");
-      if (limitSelect) {
-        const queryParams = new URLSearchParams(window.location.search);
-        queryParams.set("limit", limitSelect.value);
-        queryParams.set("current", "1");
-        router.push(`/?${queryParams.toString()}`);
-        return;
-      }
-
-      const sortSelect = e.target.closest("#sort-select");
-      if (sortSelect) {
-        const queryParams = new URLSearchParams(window.location.search);
-        queryParams.set("sort", sortSelect.value);
-        queryParams.set("current", "1");
-        router.push(`/?${queryParams.toString()}`);
-        return;
-      }
-    });
-
     // 최초 데이터 로드
     fetchProducts();
     fetchCategories();
+  });
 
-    // cleanup 함수 반환
-    return () => {
-      unsubscribeQueryChange();
-    };
+  onUnmount(() => {
+    if (unsubscribeQueryChange) unsubscribeQueryChange();
+    if (observer) observer.disconnect();
+  });
+
+  const onCardClick = (e) => {
+    const btn = e.target.closest(".add-to-cart-btn");
+    if (btn) return;
+    const card = e.target.closest(".product-card");
+    if (!card) return;
+    const id = card.getAttribute("data-product-id");
+    if (id) router.push(`/product/${id}`);
+  };
+
+  const onAddToCart = (e) => {
+    const btn = e.target.closest(".add-to-cart-btn");
+    if (!btn) return;
+    const id = btn.getAttribute("data-product-id");
+    if (!id) return;
+
+    const { data } = getState();
+    const products = data?.products || [];
+    const product = products.find((p) => p.productId === id);
+
+    if (product) {
+      cartStore.getState().addItem(id, 1, product);
+      showToast("장바구니에 추가되었습니다", "success");
+    } else {
+      console.error("상품을 찾을 수 없습니다:", id);
+      showToast("상품 정보를 찾을 수 없습니다", "error");
+    }
+  };
+
+  // 엔터키로 즉시 검색
+  const onSearchKeydown = (e) => {
+    const input = e.target.closest("#search-input");
+    if (!input) return;
+    if (e.key !== "Enter") return;
+
+    const searchValue = input.value.trim();
+    const queryParams = new URLSearchParams(window.location.search);
+    if (searchValue) {
+      queryParams.set("search", searchValue);
+    } else {
+      queryParams.delete("search");
+    }
+    queryParams.set("current", "1");
+    router.push(`/?${queryParams.toString()}`);
+  };
+
+  const onRetry = (e) => {
+    const btn = e.target.closest("#retry-btn");
+    if (!btn) return;
+    fetchProducts();
+  };
+
+  const onLoadMore = (e) => {
+    const btn = e.target.closest("#load-more-btn");
+    if (!btn) return;
+    const { filter } = getState();
+    const nextPage = filter.page + 1;
+    setState({ filter: { ...filter, page: nextPage } });
+
+    // 쿼리스트링 업데이트 (페칭은 하지 않음)
+    const queryParams = new URLSearchParams(window.location.search);
+    queryParams.set("current", nextPage.toString());
+    window.history.replaceState({}, "", `/?${queryParams.toString()}`);
+
+    fetchProducts();
+  };
+
+  // 카테고리 클릭 핸들러
+  const onCategoryClick = (e) => {
+    const resetBtn = e.target.closest("[data-breadcrumb='reset']");
+    if (resetBtn) {
+      router.push(`/`);
+      return;
+    }
+
+    // 카테고리1 클릭 (버튼 또는 브레드크럼)
+    const category1Btn = e.target.closest(".category1-filter-btn");
+    const category1Breadcrumb = e.target.closest("[data-breadcrumb='category1']");
+    if (category1Btn || category1Breadcrumb) {
+      const category1 = (category1Btn || category1Breadcrumb).getAttribute("data-category1");
+      const queryParams = new URLSearchParams(window.location.search);
+      queryParams.set("category1", category1);
+      queryParams.delete("category2"); // category1 선택 시 category2 초기화
+      queryParams.set("current", "1");
+      router.push(`/?${queryParams.toString()}`);
+      return;
+    }
+
+    // 카테고리2 클릭
+    const category2Btn = e.target.closest(".category2-filter-btn");
+    if (category2Btn) {
+      const category2 = category2Btn.getAttribute("data-category2");
+      const queryParams = new URLSearchParams(window.location.search);
+      queryParams.set("category2", category2);
+      queryParams.set("current", "1");
+      router.push(`/?${queryParams.toString()}`);
+      return;
+    }
+  };
+
+  on(root, "click", onCardClick);
+  on(root, "click", onAddToCart);
+  on(root, "click", onRetry);
+  on(root, "click", onLoadMore);
+  on(root, "click", onCategoryClick);
+  on(root, "keydown", onSearchKeydown);
+  on(root, "change", (e) => {
+    const limitSelect = e.target.closest("#limit-select");
+    if (limitSelect) {
+      const queryParams = new URLSearchParams(window.location.search);
+      queryParams.set("limit", limitSelect.value);
+      queryParams.set("current", "1");
+      router.push(`/?${queryParams.toString()}`);
+      return;
+    }
+
+    const sortSelect = e.target.closest("#sort-select");
+    if (sortSelect) {
+      const queryParams = new URLSearchParams(window.location.search);
+      queryParams.set("sort", sortSelect.value);
+      queryParams.set("current", "1");
+      router.push(`/?${queryParams.toString()}`);
+      return;
+    }
   });
 
   // 매 렌더링마다 - sentinel 다시 관찰

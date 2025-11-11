@@ -17,7 +17,7 @@ const pageLoading = () => {
   `;
 };
 
-const DetailPage = createComponent(({ root, getState, setState, template, onMount, on }) => {
+const DetailPage = createComponent(({ root, getState, setState, template, onMount, on, useStore }) => {
   const router = Router();
   const params = useParams();
   const productId = params?.productId;
@@ -28,6 +28,9 @@ const DetailPage = createComponent(({ root, getState, setState, template, onMoun
     quantity: 1,
     relatedProducts: [],
   });
+
+  // 스토어 구독 (변경 시 자동 리렌더)
+  useStore(cartStore);
 
   template((state) => {
     const { isLoading, product = {}, quantity = 1, relatedProducts = [] } = state;
@@ -85,7 +88,7 @@ const DetailPage = createComponent(({ root, getState, setState, template, onMoun
       const productId = btn.getAttribute("data-product-id");
 
       if (state.product) {
-        cartStore.addItem(productId, state.quantity, state.product);
+        cartStore.getState().addItem(productId, state.quantity, state.product);
         showToast("장바구니에 추가되었습니다", "success");
       } else {
         console.error("상품 정보를 찾을 수 없습니다");

@@ -4,15 +4,17 @@ import { cartStore } from "../stores/cartStore";
 import { formatPrice } from "../utils/formatters";
 import { showToast } from "./Toast";
 
-const CartModal = createComponent(({ root, getState, setState, template, onMount, onUnmount, on }) => {
+const CartModal = createComponent(({ root, getState, setState, template, onMount, onUnmount, on, useStore }) => {
   setState({
     isOpen: false,
-    items: [],
     selectedItems: new Set(),
   });
 
+  useStore(cartStore);
+
   template((state) => {
-    const { isOpen, items, selectedItems } = state;
+    const { isOpen, selectedItems } = state;
+    const items = cartStore.getState().items;
 
     if (!isOpen) {
       return /*html*/ `
@@ -219,18 +221,16 @@ const CartModal = createComponent(({ root, getState, setState, template, onMount
     `;
   });
 
-  let unsubscribe = null;
   let unsubscribeOpen = null;
   let unsubscribeClose = null;
   let handleEscape = null;
 
   onMount(() => {
-    // 장바구니 Store 구독
-    unsubscribe = cartStore.subscribe((cartState) => {
-      setState({
-        items: cartState.items || [],
-        selectedItems: new Set(Array.from(cartState.items.filter((item) => item.selected)).map((item) => item.id)),
-      });
+    // 초기 선택 상태 동기화
+    setState({
+      selectedItems: new Set(
+        Array.from(cartStore.getState().items.filter((item) => item.selected)).map((item) => item.id),
+      ),
     });
 
     // 모달 열기/닫기 이벤트 구독
@@ -275,15 +275,15 @@ const CartModal = createComponent(({ root, getState, setState, template, onMount
       const checkbox = e.target.closest("#cart-modal-select-all-checkbox");
       if (!checkbox) return;
 
-      const state = getState();
+      const items = cartStore.getState().items;
       if (checkbox.checked) {
         setState({
-          selectedItems: new Set(state.items.map((item) => item.id)),
+          selectedItems: new Set(items.map((item) => item.id)),
         });
-        cartStore.updateAllItemSelected(true);
+        cartStore.getState().updateAllItemSelected(true);
       } else {
         setState({ selectedItems: new Set() });
-        cartStore.updateAllItemSelected(false);
+        cartStore.getState().updateAllItemSelected(false);
       }
     };
 
@@ -298,10 +298,10 @@ const CartModal = createComponent(({ root, getState, setState, template, onMount
 
       if (checkbox.checked) {
         newSelected.add(productId);
-        cartStore.updateItemSelected(productId, true);
+        cartStore.getState().updateItemSelected(productId, true);
       } else {
         newSelected.delete(productId);
-        cartStore.updateItemSelected(productId, false);
+        cartStore.getState().updateItemSelected(productId, false);
       }
 
       setState({ selectedItems: newSelected });
@@ -313,10 +313,10 @@ const CartModal = createComponent(({ root, getState, setState, template, onMount
       if (!btn) return;
 
       const productId = btn.getAttribute("data-product-id");
-      const state = getState();
-      const item = state.items.find((i) => i.id === productId);
+      const items = cartStore.getState().items;
+      const item = items.find((i) => i.id === productId);
       if (item) {
-        cartStore.updateItemQuantity(productId, item.quantity + 1);
+        cartStore.getState().updateItemQuantity(productId, item.quantity + 1);
       }
     };
 
@@ -326,10 +326,10 @@ const CartModal = createComponent(({ root, getState, setState, template, onMount
       if (!btn) return;
 
       const productId = btn.getAttribute("data-product-id");
-      const state = getState();
-      const item = state.items.find((i) => i.id === productId);
+      const items = cartStore.getState().items;
+      const item = items.find((i) => i.id === productId);
       if (item && item.quantity > 1) {
-        cartStore.updateItemQuantity(productId, item.quantity - 1);
+        cartStore.getState().updateItemQuantity(productId, item.quantity - 1);
       }
     };
 
@@ -342,7 +342,7 @@ const CartModal = createComponent(({ root, getState, setState, template, onMount
       const value = parseInt(input.value) || 1;
       const quantity = Math.max(1, value);
 
-      cartStore.updateItemQuantity(productId, quantity);
+      cartStore.getState().updateItemQuantity(productId, quantity);
     };
 
     // 아이템 삭제
@@ -351,7 +351,7 @@ const CartModal = createComponent(({ root, getState, setState, template, onMount
       if (!btn) return;
 
       const productId = btn.getAttribute("data-product-id");
-      cartStore.removeItem(productId);
+      cartStore.getState().removeItem(productId);
       showToast("상품이 삭제되었습니다", "info");
     };
 
@@ -361,7 +361,7 @@ const CartModal = createComponent(({ root, getState, setState, template, onMount
       if (!btn) return;
 
       const state = getState();
-      cartStore.removeItems(Array.from(state.selectedItems));
+      cartStore.getState().removeItems(Array.from(state.selectedItems));
       setState({ selectedItems: new Set() });
       showToast("선택된 상품들이 삭제되었습니다", "info");
     };
@@ -371,7 +371,7 @@ const CartModal = createComponent(({ root, getState, setState, template, onMount
       const btn = e.target.closest("#cart-modal-clear-cart-btn");
       if (!btn) return;
 
-      cartStore.clear();
+      cartStore.getState().clear();
       setState({ selectedItems: new Set() });
       showToast("장바구니가 비워졌습니다", "info");
     };
@@ -417,7 +417,6 @@ const CartModal = createComponent(({ root, getState, setState, template, onMount
   });
 
   onUnmount(() => {
-    if (unsubscribe) unsubscribe();
     if (unsubscribeOpen) unsubscribeOpen();
     if (unsubscribeClose) unsubscribeClose();
     if (handleEscape) {
