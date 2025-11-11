@@ -6,6 +6,7 @@ export const createComponent = (setup) => {
     const mountedCallbacks = [];
     const unmountCallbacks = [];
     const renderCallbacks = [];
+    let isMounted = false;
     let mountCleanups = [];
     let renderCleanups = [];
 
@@ -54,13 +55,15 @@ export const createComponent = (setup) => {
       // 그리기
       root.innerHTML = view(state);
 
-      mountedCallbacks.forEach((fn) => fn && fn());
-
       // render 후 콜백 실행 (DOM 이벤트용)
       renderCallbacks.forEach((fn) => {
         const cleanup = fn();
         if (typeof cleanup === "function") renderCleanups.push(cleanup);
       });
+
+      if (isMounted) return;
+      mountedCallbacks.forEach((fn) => fn && fn());
+      isMounted = true;
     };
 
     // 스토어 구독 헬퍼 - subscribe만 처리 (반환 없음)

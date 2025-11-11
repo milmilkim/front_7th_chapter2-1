@@ -154,6 +154,7 @@ export const renderPage = (routerId = "router-view") => {
 
   // 이전 페이지 언마운트
   if (currentPageInstance && currentPageInstance.unmount) {
+    console.log("currentPageInstance unmount");
     currentPageInstance.unmount();
     currentPageInstance = null;
   }
@@ -186,6 +187,11 @@ export const renderPage = (routerId = "router-view") => {
       options: { name: matchedRoute.name },
     });
 
+    // 페이지 인스턴스 렌더링
+    if (pageInstance && pageInstance.render) {
+      pageInstance.render();
+    }
+
     // 페이지 인스턴스가 unmount 메서드를 가지고 있으면 저장
     if (pageInstance && pageInstance.unmount) {
       currentPageInstance = pageInstance;
@@ -196,6 +202,11 @@ export const renderPage = (routerId = "router-view") => {
       root: routerRoot,
       options: { name: "notfound" },
     });
+
+    // NotFound 인스턴스 렌더링
+    if (notFoundInstance && notFoundInstance.render) {
+      notFoundInstance.render();
+    }
 
     // NotFound 인스턴스가 unmount 메서드를 가지고 있으면 저장
     if (notFoundInstance && notFoundInstance.unmount) {

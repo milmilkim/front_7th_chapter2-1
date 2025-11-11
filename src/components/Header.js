@@ -45,20 +45,18 @@ const shouldShowBackButton = (path) => {
 };
 
 const Header = createComponent(({ root, setState, template, onMount, onUnmount, on, useStore }) => {
+  useStore(cartStore);
   setState({
     currentPath: window.location.pathname,
   });
 
-  useStore(cartStore);
-
   let unsubscribeRouteChange = null;
 
   template((state) => {
-    const { currentPath } = state;
     const cartCount = cartStore.getState().items.length;
-    const title = getTitleByPath(currentPath);
-    const showBackButton = shouldShowBackButton(currentPath);
-    const titleTemplate = getTitleTemplateByPath(currentPath, title);
+    const title = getTitleByPath(state.currentPath);
+    const showBackButton = shouldShowBackButton(state.currentPath);
+    const titleTemplate = getTitleTemplateByPath(state.currentPath, title);
 
     return /*html*/ `
           <div class="max-w-md mx-auto px-4 py-4">
@@ -94,7 +92,7 @@ const Header = createComponent(({ root, setState, template, onMount, onUnmount, 
     `;
   });
 
-  // 최초 1번만 실행 - EventBus 구독
+  // 컴포넌트 생성 시점에 바로 실행 (이벤트 구독 등)
   onMount(() => {
     // 라우트 변경 이벤트 구독
     unsubscribeRouteChange = eventBus.on(Events.ROUTE_CHANGED, (path) => {
