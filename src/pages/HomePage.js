@@ -14,7 +14,7 @@ const HomePage = createComponent(({ root, getState, setState, template, onBefore
     data: null,
     searchValue: queryParams.search || "",
     filter: {
-      page: parseInt(queryParams.current) || 1,
+      page: 1,
       limit: parseInt(queryParams.limit) || 20,
       sort: queryParams.sort || "price_asc",
       category1: queryParams.category1 || "",
@@ -33,7 +33,6 @@ const HomePage = createComponent(({ root, getState, setState, template, onBefore
 
     try {
       const newData = await getProducts(filter);
-      console.log(filter);
 
       if (filter.page === 1) {
         setState({ data: newData, isLoading: false });
@@ -111,36 +110,36 @@ const HomePage = createComponent(({ root, getState, setState, template, onBefore
         category2: queryParams.category2 || "",
         search: queryParams.search || "",
       },
-      data: null,
     });
     fetchProducts();
   });
 
   // 최초 1번만 - DOM 이벤트 위임
   onBeforeMount(() => {
+    // current 파라미터 삭제 (항상 1부터 시작)
+    const queryParams = new URLSearchParams(window.location.search);
+    if (queryParams.has("current")) {
+      queryParams.delete("current");
+      window.history.replaceState({}, "", queryParams.toString() ? `/?${queryParams.toString()}` : "/");
+    }
+
     // 무한 스크롤 옵저버 생성
     observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           console.log("무한 스크롤 옵저버 트리거");
-          const { isLoading, data } = getState();
+          const { isLoading, data, filter } = getState();
           const pagination = data?.pagination || {};
 
           // 로딩 중이거나 더 이상 데이터가 없으면 요청하지 않음
           if (isLoading) return;
           if (!pagination.hasNext) return;
 
-          // 다음 페이지 로드
-          const { filter } = getState();
+          // 다음 페이지로 쿼리스트링 업데이트 (데이터 페칭은 안함)
           const nextPage = filter.page + 1;
-          setState({ filter: { ...filter, page: nextPage } });
-
-          // 쿼리스트링 업데이트 (페칭은 하지 않음)
           const queryParams = new URLSearchParams(window.location.search);
           queryParams.set("current", nextPage.toString());
-          window.history.replaceState({}, "", `/?${queryParams.toString()}`);
-
-          fetchProducts();
+          router.replace(`/?${queryParams.toString()}`);
         }
       });
     });
@@ -212,14 +211,11 @@ const HomePage = createComponent(({ root, getState, setState, template, onBefore
     if (!btn) return;
     const { filter } = getState();
     const nextPage = filter.page + 1;
-    setState({ filter: { ...filter, page: nextPage } });
 
-    // 쿼리스트링 업데이트 (페칭은 하지 않음)
+    // 쿼리스트링 업데이트 → useQueryChange 트리거 → 페칭
     const queryParams = new URLSearchParams(window.location.search);
     queryParams.set("current", nextPage.toString());
-    window.history.replaceState({}, "", `/?${queryParams.toString()}`);
-
-    fetchProducts();
+    router.replace(`/?${queryParams.toString()}`);
   };
 
   // 카테고리 클릭 핸들러
