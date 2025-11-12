@@ -1,5 +1,4 @@
 import App from "./App.js";
-import { initRouter } from "./router.js";
 
 const enableMocking = () =>
   import("./mocks/browser.js").then(({ worker }) =>
@@ -19,8 +18,6 @@ const render = () => {
 
 const main = () => {
   render();
-  // 라우터 뷰가 DOM에 존재한 후 라우터 초기화
-  initRouter();
 };
 
 if (import.meta.env.MODE !== "test") {

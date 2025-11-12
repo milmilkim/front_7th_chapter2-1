@@ -1,6 +1,7 @@
 import { createComponent } from "../core/BaseComponent";
 import { eventBus, Events } from "../core/EventBus";
 import { cartStore } from "../stores/cartStore";
+import { useRouter, useRouteChange } from "../router/index";
 
 const getTitleByPath = (path) => {
   if (path === "/") return "쇼핑몰";
@@ -44,13 +45,18 @@ const shouldShowBackButton = (path) => {
   return path.startsWith("/product/");
 };
 
-const Header = createComponent(({ root, setState, template, onBeforeMount, onUnmount, on, useStore }) => {
+const Header = createComponent(({ root, setState, template, onUnmount, on, useStore }) => {
   useStore(cartStore);
+  const router = useRouter();
+
   setState({
-    currentPath: window.location.pathname,
+    currentPath: router.getCurrent().path,
   });
 
-  let unsubscribeRouteChange = null;
+  // 경로 변경 감지 구독
+  const unsubscribeRouteChange = useRouteChange((path) => {
+    setState({ currentPath: path });
+  });
 
   template((state) => {
     const cartCount = cartStore.getState().items.length;
@@ -90,16 +96,6 @@ const Header = createComponent(({ root, setState, template, onBeforeMount, onUnm
             </div>
         </div>
     `;
-  });
-
-  // 컴포넌트 생성 시점에 바로 실행 (이벤트 구독 등)
-  onBeforeMount(() => {
-    // 라우트 변경 이벤트 구독
-    unsubscribeRouteChange = eventBus.on(Events.ROUTE_CHANGED, (path) => {
-      if (path) {
-        setState({ currentPath: path });
-      }
-    });
   });
 
   // 장바구니 아이콘 클릭 시 모달 열기

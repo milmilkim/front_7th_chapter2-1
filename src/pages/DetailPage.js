@@ -1,5 +1,5 @@
 import { createComponent } from "../core/BaseComponent";
-import { Router, useParams } from "../router";
+import { useRouter, useParams } from "../router/index.js";
 import ProductInfo from "../components/ProductInfo";
 import RelatedProducts from "../components/RelatedProducts";
 import { getProduct, getProducts } from "../api/productApi";
@@ -18,7 +18,7 @@ const pageLoading = () => {
 };
 
 const DetailPage = createComponent(({ root, getState, setState, template, on, useStore }) => {
-  const router = Router();
+  const router = useRouter();
   const params = useParams();
   const productId = params?.productId;
 

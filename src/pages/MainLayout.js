@@ -2,7 +2,7 @@ import Header from "../components/Header";
 import Toast from "../components/Toast";
 import CartModal from "../components/CartModal";
 import { createComponent } from "../core/BaseComponent";
-import { initRouter } from "../router.js";
+import { initRouter } from "../router/index.js";
 
 const MainLayout = createComponent(({ template, onMounted }) => {
   onMounted(() => {

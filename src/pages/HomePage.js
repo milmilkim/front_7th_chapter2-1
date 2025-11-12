@@ -1,14 +1,13 @@
 import SearchFilter from "../components/SearchFilter";
 import ProductList from "../components/ProductList";
-import { Router, useQueryParams } from "../router";
+import { useRouter, useQueryParams, useQueryChange } from "../router/index.js";
 import { createComponent } from "../core/BaseComponent";
 import { getProducts, getCategories } from "../api/productApi";
 import { cartStore } from "../stores/cartStore";
 import ErrorView from "../components/ErrorView";
 import { showToast } from "../components/Toast";
-import { eventBus, Events } from "../core/EventBus";
 const HomePage = createComponent(({ root, getState, setState, template, onBeforeMount, onUpdated, onUnmount, on }) => {
-  const router = Router();
+  const router = useRouter();
   const queryParams = useQueryParams();
 
   setState({
@@ -97,58 +96,28 @@ const HomePage = createComponent(({ root, getState, setState, template, onBefore
     `;
   });
 
-  // 무한 스크롤 옵저버 (컴포넌트 레벨에서 한 번만 생성)
+  // 무한 스크롤 옵저버
   let observer = null;
-  let previousQueryParams = null;
-  let unsubscribeQueryChange = null;
+
+  // 쿼리스트링 변경 감지 구독
+  const unsubscribeQueryChange = useQueryChange((queryParams) => {
+    setState({
+      searchValue: queryParams.search || "",
+      filter: {
+        page: parseInt(queryParams.current) || 1,
+        limit: parseInt(queryParams.limit) || 20,
+        sort: queryParams.sort || "price_asc",
+        category1: queryParams.category1 || "",
+        category2: queryParams.category2 || "",
+        search: queryParams.search || "",
+      },
+      data: null,
+    });
+    fetchProducts();
+  });
 
   // 최초 1번만 - DOM 이벤트 위임
   onBeforeMount(() => {
-    // 쿼리 변경 이벤트 구독
-    unsubscribeQueryChange = eventBus.on(Events.QUERY_CHANGED, (queryParams) => {
-      const { filter } = getState();
-      const currentPage = parseInt(queryParams.current) || 1;
-
-      // current만 변경된 경우 (무한 스크롤)는 페칭하지 않음
-      if (previousQueryParams) {
-        const isOnlyCurrentChanged =
-          queryParams.current !== previousQueryParams.current &&
-          queryParams.search === previousQueryParams.search &&
-          queryParams.limit === previousQueryParams.limit &&
-          queryParams.sort === previousQueryParams.sort &&
-          queryParams.category1 === previousQueryParams.category1 &&
-          queryParams.category2 === previousQueryParams.category2;
-
-        if (isOnlyCurrentChanged) {
-          // current만 업데이트하고 페칭은 하지 않음
-          setState({
-            filter: {
-              ...filter,
-              page: currentPage,
-            },
-          });
-          previousQueryParams = { ...queryParams };
-          return;
-        }
-      }
-
-      setState({
-        searchValue: queryParams.search || "",
-        filter: {
-          ...filter,
-          page: currentPage,
-          limit: parseInt(queryParams.limit) || 20,
-          sort: queryParams.sort || "price_asc",
-          category1: queryParams.category1 || "",
-          category2: queryParams.category2 || "",
-          search: queryParams.search || "",
-        },
-        data: null, // 쿼리 변경 시 데이터 초기화
-      });
-      previousQueryParams = { ...queryParams };
-      fetchProducts();
-    });
-
     // 무한 스크롤 옵저버 생성
     observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
