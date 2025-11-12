@@ -167,6 +167,9 @@ const HomePage = createComponent(({ root, getState, setState, template, onBefore
   const onAddToCart = (e) => {
     const btn = e.target.closest(".add-to-cart-btn");
     if (!btn) return;
+
+    e.stopPropagation();
+
     const id = btn.getAttribute("data-product-id");
     if (!id) return;
 
@@ -196,7 +199,7 @@ const HomePage = createComponent(({ root, getState, setState, template, onBefore
     } else {
       queryParams.delete("search");
     }
-    queryParams.set("current", "1");
+    queryParams.delete("current");
     router.push(`/?${queryParams.toString()}`);
   };
 

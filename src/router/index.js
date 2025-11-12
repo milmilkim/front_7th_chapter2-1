@@ -151,8 +151,9 @@ export const initRouter = () => {
       currentPageInstance = null;
     }
     const Page = matchedRoute.component;
-    Page({ root, options: { name: matchedRoute.name } }).render?.();
-    currentPageInstance = Page;
+    const pageInstance = Page({ root, options: { name: matchedRoute.name } });
+    pageInstance.render?.();
+    currentPageInstance = pageInstance;
 
     // 렌더링된 경로와 파라미터 저장
     lastRenderedPath = current.path;
