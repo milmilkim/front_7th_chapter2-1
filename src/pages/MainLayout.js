@@ -3,6 +3,7 @@ import Toast from "../components/Toast";
 import CartModal from "../components/CartModal";
 import { createComponent } from "../core/BaseComponent";
 import { initRouter } from "../router/index.js";
+import Footer from "../components/Footer";
 
 const MainLayout = createComponent(({ template, onMounted }) => {
   onMounted(() => {
@@ -25,11 +26,7 @@ const MainLayout = createComponent(({ template, onMounted }) => {
     <main class="max-w-md mx-auto px-4 py-4">
       <div id="router-view"></div>
     </main>
-    <footer class="bg-white shadow-sm">
-      <div class="max-w-md mx-auto py-8 text-center text-gray-500">
-        <p>© 2025 항해플러스 프론트엔드 쇼핑몰</p>
-      </div>
-    </footer>
+    ${Footer()}
     <div id="notification-container"></div>
     ${Toast()}
     <div id="cart-modal-container"></div>
